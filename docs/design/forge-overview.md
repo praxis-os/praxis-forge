@@ -144,10 +144,17 @@ AgentSpec (yaml) ─▶ parse ─▶ validate ─▶ normalize ─▶ + overlays
 ## Phase roadmap (from seed, with module-internal notes)
 
 - **Phase 0 — contracts.** This document and siblings. No code.
-- **Phase 1 — minimum slice.** `spec/` loader + strict validation, one
-  typed registry, one provider, one policy pack, one tool pack,
-  materialization into a real `*orchestrator.Orchestrator`, minimal Go
-  API, one example, unit tests on parser/validator/builder.
+- **Phase 1 — minimum vertical slice.** `spec/` loader + strict
+  validation, one typed registry, one factory per kernel seam (11
+  kinds including `prompt_asset`), composition adapters, materialization
+  into a real `*orchestrator.Orchestrator`, minimal Go API, one
+  realistic demo, unit + offline integration tests. Detailed scope
+  in `docs/superpowers/specs/2026-04-15-praxis-forge-phase-1-design.md`.
+  The broader default component set described in
+  [`default-toolpacks.md`](default-toolpacks.md) and
+  [`default-policypacks.md`](default-policypacks.md) is a target that
+  accrues across Phase 1.x → Phase 2; Phase 1 itself ships one factory
+  per seam.
 - **Phase 2 — composition depth.** Overlays, `extends:`, canonical
   manifest, deterministic build (stable hashing), richer inspection.
 - **Phase 3 — skills.** Skill registry, expansion rules, prompt-fragment
