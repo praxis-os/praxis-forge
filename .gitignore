@@ -1,0 +1,22 @@
+# Go build artifacts
+*.exe
+*.test
+*.out
+*.o
+*.a
+
+# Coverage
+cov.out
+coverage.out
+coverage.html
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Local tooling
+/bin/
+/dist/
