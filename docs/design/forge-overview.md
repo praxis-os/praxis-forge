@@ -24,6 +24,11 @@ Copied from the source brief, load-bearing:
 - runtime plugin systems, reflection-heavy magic, arbitrary executable config
 - session-resume state (approval, multi-turn history) — those cross
   orchestration's boundary and belong to the caller or `praxis-os`
+- short-, medium-, and long-term memory (context-window management,
+  session continuity, RAG, vector stores) — forge owns zero of these
+  horizons. See [`adr/0003-memory-strategy-across-three-levels.md`](../adr/0003-memory-strategy-across-three-levels.md)
+  for the decision and [`design/memory-and-state.md`](memory-and-state.md)
+  for the patterns users follow.
 
 ## Internal layering
 

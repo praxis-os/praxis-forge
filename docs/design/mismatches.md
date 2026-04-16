@@ -29,6 +29,10 @@ session state.
 
 **Praxis implication.** None. Praxis stays as-is.
 
+**See also.** [`adr/0003-memory-strategy-across-three-levels.md`](../adr/0003-memory-strategy-across-three-levels.md)
+codifies this cross-level; [`design/memory-and-state.md`](memory-and-state.md)
+shows how users own the message buffer at Levels 1 and 2.
+
 ## Mismatch 2 — Praxis accepts one policy/filter per stage; forge lists many
 
 **Gap.** The AgentSpec lists arrays of policies and filters. Praxis
@@ -108,6 +112,10 @@ tomorrow. Forge does not gain a session/approval store.
 
 **Praxis implication.** None today. If `praxis-os` needs an approval
 persistence helper, it will live there, not here.
+
+**See also.** [`adr/0003-memory-strategy-across-three-levels.md`](../adr/0003-memory-strategy-across-three-levels.md)
+§ Medium-term; [`design/memory-and-state.md`](memory-and-state.md) shows
+the full request → pause → persist → resume sequence with example code.
 
 ## Mismatch 6 — Budget ceilings are per-request; spec declares profile + overrides
 
