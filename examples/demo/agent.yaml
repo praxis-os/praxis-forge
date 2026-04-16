@@ -1,0 +1,54 @@
+apiVersion: forge.praxis-os.dev/v0
+kind: AgentSpec
+metadata:
+  id: forge.examples.demo
+  version: 0.1.0
+  displayName: "Forge demo agent"
+provider:
+  ref: provider.anthropic@1.0.0
+  config:
+    model: claude-sonnet-4-5
+    maxOutputTokens: 512
+prompt:
+  system:
+    ref: prompt.demo-system@1.0.0
+    config:
+      text: |
+        You are a careful research assistant. Use the http_get tool to
+        fetch the URL the user names, then summarize its content in
+        2-3 sentences. Do not fetch other URLs.
+tools:
+  - ref: toolpack.http-get@1.0.0
+    config:
+      allowedHosts:
+        - raw.githubusercontent.com
+      timeoutMs: 5000
+policies:
+  - ref: policypack.pii-redaction@1.0.0
+    config:
+      strictness: medium
+filters:
+  preLLM:
+    - ref: filter.secret-scrubber@1.0.0
+  preTool:
+    - ref: filter.path-escape@1.0.0
+  postTool:
+    - ref: filter.output-truncate@1.0.0
+      config:
+        maxBytes: 16384
+budget:
+  ref: budgetprofile.default-tier1@1.0.0
+  overrides:
+    maxWallClock: 20s
+    maxToolCalls: 4
+telemetry:
+  ref: telemetryprofile.slog@1.0.0
+  config:
+    level: info
+credentials:
+  ref: credresolver.env@1.0.0
+identity:
+  ref: identitysigner.ed25519@1.0.0
+  config:
+    issuer: forge-demo
+    tokenLifetimeSeconds: 60

@@ -27,19 +27,55 @@ and materializes a reproducible `BuiltAgent` backed by a configured
 
 ## Status
 
-**Phase 0 — architecture and contracts.** No runtime code yet.
-See [`docs/`](docs/):
+**Phase 1 — minimum vertical slice.** Spec loader, typed
+`ComponentRegistry`, 11 factory kinds, composition adapters, and
+materialization into a real `*orchestrator.Orchestrator`. 11 concrete
+factories ship alongside the kernel wiring; see
+[`docs/superpowers/specs/`](docs/superpowers/specs/) for the design
+spec and [`docs/superpowers/plans/`](docs/superpowers/plans/) for the
+task-by-task implementation plan.
+
+Phase 0 architecture docs remain authoritative:
 
 - [ADR 0001 — praxis-forge layering](docs/adr/0001-praxis-forge-layering.md)
+- [ADR 0002 — external registries at dev time only](docs/adr/0002-external-registries-at-devtime-only.md)
 - [Design overview](docs/design/forge-overview.md)
 - [AgentSpec v0](docs/design/agent-spec-v0.md)
 - [Registry interfaces](docs/design/registry-interfaces.md)
+- [Default ToolPacks](docs/design/default-toolpacks.md)
+- [Default Policy-packs](docs/design/default-policypacks.md)
+- [External registries](docs/design/external-registries.md)
 - [Mismatches vs. praxis runtime](docs/design/mismatches.md)
 - [Source brief (CONTEXT_SEED)](docs/CONTEXT_SEED.md)
 
-Phase 1 will add the first vertical slice: spec loader, typed registry with
-one provider / one policy pack / one tool pack, and materialization into a
-real `*orchestrator.Orchestrator`.
+## Quickstart
+
+```go
+r := registry.NewComponentRegistry()
+// Register one factory per kind referenced by your spec.
+must(r.RegisterProvider(provideranthropic.NewFactory("provider.anthropic@1.0.0", apiKey)))
+must(r.RegisterPromptAsset(promptassetliteral.NewFactory("prompt.sys@1.0.0")))
+// ... remaining kinds ...
+
+s, err := forge.LoadSpec("agent.yaml")
+if err != nil { log.Fatal(err) }
+
+b, err := forge.Build(ctx, s, r)
+if err != nil { log.Fatal(err) }
+
+res, err := b.Invoke(ctx, praxis.InvocationRequest{
+    Model:        "claude-sonnet-4-5",
+    SystemPrompt: b.SystemPrompt(),
+    Messages: []llm.Message{{
+        Role:  llm.RoleUser,
+        Parts: []llm.MessagePart{{Type: llm.PartTypeText, Text: "hello"}},
+    }},
+})
+```
+
+See [`examples/demo`](examples/demo/) for a full realistic example
+(Anthropic provider + http_get tool + full filter chain). Run with
+`ANTHROPIC_API_KEY=sk-... go run -tags=integration ./examples/demo`.
 
 ## Module
 
@@ -48,6 +84,4 @@ module github.com/praxis-os/praxis-forge
 go    1.26
 ```
 
-Depends on `github.com/praxis-os/praxis` via a local `replace` directive
-pointing at `../praxis` during Phase 0. A published tag will replace the
-directive once the kernel stabilizes.
+Depends on `github.com/praxis-os/praxis` v0.9.0 (remote).
