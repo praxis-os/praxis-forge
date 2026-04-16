@@ -32,7 +32,7 @@ Five areas inside the module:
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ forge (top-level facade)                                        │
-│   Build(ctx, spec, overlays, registry, opts) (*BuiltAgent, …)   │
+│   Build(ctx, spec, registry, opts) (*BuiltAgent, …)             │
 └────────────▲───────────────▲──────────────▲────────────────────┘
              │               │              │
     ┌────────┴─────┐ ┌───────┴──────┐ ┌─────┴──────┐
@@ -107,11 +107,12 @@ Single import for consumers:
 ```go
 built, err := forge.Build(ctx,
     spec,          // loaded via forge.LoadSpec
-    overlays,      // []forge.AgentOverlay
     registry,      // *forge.ComponentRegistry
     forge.WithTelemetry(t),
     forge.WithLogger(l),
 )
+// Phase 2 grows this signature with an `overlays []forge.AgentOverlay`
+// parameter between spec and registry.
 if err != nil { ... }
 
 result, err := built.Invoke(ctx, praxis.InvocationRequest{ ... })
@@ -150,13 +151,15 @@ AgentSpec (yaml) ─▶ parse ─▶ validate ─▶ normalize ─▶ + overlays
   into a real `*orchestrator.Orchestrator`, minimal Go API, one
   realistic demo, unit + offline integration tests. Detailed scope
   in `docs/superpowers/specs/2026-04-15-praxis-forge-phase-1-design.md`.
-  The broader default component set described in
+  No overlays in the `Build` signature; added in Phase 2. The broader
+  default component set described in
   [`default-toolpacks.md`](default-toolpacks.md) and
   [`default-policypacks.md`](default-policypacks.md) is a target that
   accrues across Phase 1.x → Phase 2; Phase 1 itself ships one factory
   per seam.
-- **Phase 2 — composition depth.** Overlays, `extends:`, canonical
-  manifest, deterministic build (stable hashing), richer inspection.
+- **Phase 2 — composition depth.** `Build` signature grows
+  `overlays []AgentOverlay`. Overlays, `extends:`, canonical manifest,
+  deterministic build (stable hashing), richer inspection.
 - **Phase 3 — skills.** Skill registry, expansion rules, prompt-fragment
   merge, dependency/conflict validation, output contracts.
 - **Phase 4 — MCP consume.** MCP imports, remote metadata normalization,

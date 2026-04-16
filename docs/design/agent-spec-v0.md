@@ -124,16 +124,17 @@ registered, or if it is registered under a different kind.
 
 Kinds in v0:
 
-| Slot           | Kind                    | Resolves to praxis seam                       |
-|----------------|-------------------------|-----------------------------------------------|
-| `provider`     | `provider`              | `llm.Provider`                                |
-| `tools[]`      | `tool_pack`             | `tools.Invoker` (merged by build layer)       |
-| `policies[]`   | `policy_pack`           | `hooks.PolicyHook` (merged)                   |
-| `filters.*`    | `pre_llm_filter` etc.   | `hooks.PreLLMFilter` / etc. (merged)          |
-| `budget`       | `budget_profile`        | `budget.Guard` + `budget.Config` defaults     |
-| `telemetry`    | `telemetry_profile`     | `telemetry.LifecycleEventEmitter` + enricher  |
-| `credentials`  | `credential_resolver`   | `credentials.Resolver`                        |
-| `identity`     | `identity_signer`       | `identity.Signer`                             |
+| Slot             | Kind                    | Resolves to praxis seam                       |
+|------------------|-------------------------|-----------------------------------------------|
+| `provider`       | `provider`              | `llm.Provider`                                |
+| `prompt.system`  | `prompt_asset`          | `string` injected per-invoke as `SystemPrompt`|
+| `tools[]`        | `tool_pack`             | `tools.Invoker` (merged by build layer)       |
+| `policies[]`     | `policy_pack`           | `hooks.PolicyHook` (merged)                   |
+| `filters.*`      | `pre_llm_filter` etc.   | `hooks.PreLLMFilter` / etc. (merged)          |
+| `budget`         | `budget_profile`        | `budget.Guard` + `budget.Config` defaults     |
+| `telemetry`      | `telemetry_profile`     | `telemetry.LifecycleEventEmitter` + enricher  |
+| `credentials`    | `credential_resolver`   | `credentials.Resolver`                        |
+| `identity`       | `identity_signer`       | `identity.Signer`                             |
 
 Deferred kinds: `skill` (Phase 3), `mcp_binding` (Phase 4), `output_contract`
 (Phase 3, driven by skills).
@@ -211,9 +212,10 @@ convention is a convenience, not a mandate.
 
 ## Open questions (raised for Phase 1 review)
 
-- Do we allow inline prompts (literal strings) under `prompt.system`,
-  or force every prompt through a registered prompt asset? v0 assumes
-  the latter (tighter governance). Revisit in Phase 1.
+- **Resolved in Phase 1.** Prompts flow through registered
+  `prompt_asset` factories. The simplest factory (`prompt.literal@1`)
+  returns its configured `text` verbatim. Inline literal prompts in the
+  spec remain prohibited for tighter governance.
 - Versioning scheme for factory IDs: attach to the ID (`@1.4.0`) or to
   the spec's compatibility block? v0 uses `@version` in the ref for
   locality.
