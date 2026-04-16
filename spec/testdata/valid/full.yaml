@@ -1,0 +1,56 @@
+apiVersion: forge.praxis-os.dev/v0
+kind: AgentSpec
+metadata:
+  id: acme.support-triage
+  version: 1.4.0
+  displayName: "Support Triage"
+  description: "Triages inbound tickets"
+  owners:
+    - team: platform-ai
+      contact: platform-ai@acme.example
+  labels:
+    domain: support
+provider:
+  ref: provider.anthropic@1.0.0
+  config:
+    model: claude-sonnet-4-5
+    maxOutputTokens: 2048
+prompt:
+  system:
+    ref: prompt.demo-system@1.0.0
+tools:
+  - ref: toolpack.http-get@1.0.0
+    config:
+      allowedHosts: ["raw.githubusercontent.com"]
+      timeoutMs: 5000
+policies:
+  - ref: policypack.pii-redaction@1.0.0
+    config:
+      strictness: medium
+filters:
+  preLLM:
+    - ref: filter.secret-scrubber@1.0.0
+  preTool:
+    - ref: filter.path-escape@1.0.0
+  postTool:
+    - ref: filter.output-truncate@1.0.0
+      config:
+        maxBytes: 16384
+budget:
+  ref: budgetprofile.default-tier1@1.0.0
+  overrides:
+    maxWallClock: 15s
+    maxToolCalls: 12
+telemetry:
+  ref: telemetryprofile.slog@1.0.0
+  config:
+    level: info
+credentials:
+  ref: credresolver.env@1.0.0
+  scopes:
+    - net:http
+identity:
+  ref: identitysigner.ed25519@1.0.0
+  config:
+    issuer: acme
+    tokenLifetimeSeconds: 60
