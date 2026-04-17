@@ -15,10 +15,12 @@ import (
 
 // --- Fake factories ---
 
+const fakeDesc = "fake"
+
 type fakeProviderFactory struct{ id ID }
 
 func (f fakeProviderFactory) ID() ID              { return f.id }
-func (f fakeProviderFactory) Description() string { return "fake" }
+func (f fakeProviderFactory) Description() string { return fakeDesc }
 func (f fakeProviderFactory) Build(context.Context, map[string]any) (llm.Provider, error) {
 	return nil, nil
 }
@@ -26,7 +28,7 @@ func (f fakeProviderFactory) Build(context.Context, map[string]any) (llm.Provide
 type fakePromptAssetFactory struct{ id ID }
 
 func (f fakePromptAssetFactory) ID() ID              { return f.id }
-func (f fakePromptAssetFactory) Description() string { return "fake" }
+func (f fakePromptAssetFactory) Description() string { return fakeDesc }
 func (f fakePromptAssetFactory) Build(context.Context, map[string]any) (string, error) {
 	return "hi", nil
 }
@@ -34,7 +36,7 @@ func (f fakePromptAssetFactory) Build(context.Context, map[string]any) (string, 
 type fakeToolPackFactory struct{ id ID }
 
 func (f fakeToolPackFactory) ID() ID              { return f.id }
-func (f fakeToolPackFactory) Description() string { return "fake" }
+func (f fakeToolPackFactory) Description() string { return fakeDesc }
 func (f fakeToolPackFactory) Build(context.Context, map[string]any) (ToolPack, error) {
 	return ToolPack{}, nil
 }
@@ -42,7 +44,7 @@ func (f fakeToolPackFactory) Build(context.Context, map[string]any) (ToolPack, e
 type fakePolicyPackFactory struct{ id ID }
 
 func (f fakePolicyPackFactory) ID() ID              { return f.id }
-func (f fakePolicyPackFactory) Description() string { return "fake" }
+func (f fakePolicyPackFactory) Description() string { return fakeDesc }
 func (f fakePolicyPackFactory) Build(context.Context, map[string]any) (PolicyPack, error) {
 	return PolicyPack{}, nil
 }
@@ -50,7 +52,7 @@ func (f fakePolicyPackFactory) Build(context.Context, map[string]any) (PolicyPac
 type fakePreLLMFilterFactory struct{ id ID }
 
 func (f fakePreLLMFilterFactory) ID() ID              { return f.id }
-func (f fakePreLLMFilterFactory) Description() string { return "fake" }
+func (f fakePreLLMFilterFactory) Description() string { return fakeDesc }
 func (f fakePreLLMFilterFactory) Build(context.Context, map[string]any) (hooks.PreLLMFilter, error) {
 	return nil, nil
 }
@@ -58,7 +60,7 @@ func (f fakePreLLMFilterFactory) Build(context.Context, map[string]any) (hooks.P
 type fakePreToolFilterFactory struct{ id ID }
 
 func (f fakePreToolFilterFactory) ID() ID              { return f.id }
-func (f fakePreToolFilterFactory) Description() string { return "fake" }
+func (f fakePreToolFilterFactory) Description() string { return fakeDesc }
 func (f fakePreToolFilterFactory) Build(context.Context, map[string]any) (hooks.PreToolFilter, error) {
 	return nil, nil
 }
@@ -66,7 +68,7 @@ func (f fakePreToolFilterFactory) Build(context.Context, map[string]any) (hooks.
 type fakePostToolFilterFactory struct{ id ID }
 
 func (f fakePostToolFilterFactory) ID() ID              { return f.id }
-func (f fakePostToolFilterFactory) Description() string { return "fake" }
+func (f fakePostToolFilterFactory) Description() string { return fakeDesc }
 func (f fakePostToolFilterFactory) Build(context.Context, map[string]any) (hooks.PostToolFilter, error) {
 	return nil, nil
 }
@@ -74,7 +76,7 @@ func (f fakePostToolFilterFactory) Build(context.Context, map[string]any) (hooks
 type fakeBudgetProfileFactory struct{ id ID }
 
 func (f fakeBudgetProfileFactory) ID() ID              { return f.id }
-func (f fakeBudgetProfileFactory) Description() string { return "fake" }
+func (f fakeBudgetProfileFactory) Description() string { return fakeDesc }
 func (f fakeBudgetProfileFactory) Build(context.Context, map[string]any) (BudgetProfile, error) {
 	return BudgetProfile{}, nil
 }
@@ -82,7 +84,7 @@ func (f fakeBudgetProfileFactory) Build(context.Context, map[string]any) (Budget
 type fakeTelemetryProfileFactory struct{ id ID }
 
 func (f fakeTelemetryProfileFactory) ID() ID              { return f.id }
-func (f fakeTelemetryProfileFactory) Description() string { return "fake" }
+func (f fakeTelemetryProfileFactory) Description() string { return fakeDesc }
 func (f fakeTelemetryProfileFactory) Build(context.Context, map[string]any) (TelemetryProfile, error) {
 	return TelemetryProfile{}, nil
 }
@@ -90,7 +92,7 @@ func (f fakeTelemetryProfileFactory) Build(context.Context, map[string]any) (Tel
 type fakeCredentialResolverFactory struct{ id ID }
 
 func (f fakeCredentialResolverFactory) ID() ID              { return f.id }
-func (f fakeCredentialResolverFactory) Description() string { return "fake" }
+func (f fakeCredentialResolverFactory) Description() string { return fakeDesc }
 func (f fakeCredentialResolverFactory) Build(context.Context, map[string]any) (credentials.Resolver, error) {
 	return nil, nil
 }
@@ -98,7 +100,7 @@ func (f fakeCredentialResolverFactory) Build(context.Context, map[string]any) (c
 type fakeIdentitySignerFactory struct{ id ID }
 
 func (f fakeIdentitySignerFactory) ID() ID              { return f.id }
-func (f fakeIdentitySignerFactory) Description() string { return "fake" }
+func (f fakeIdentitySignerFactory) Description() string { return fakeDesc }
 func (f fakeIdentitySignerFactory) Build(context.Context, map[string]any) (identity.Signer, error) {
 	return nil, nil
 }

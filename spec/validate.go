@@ -18,6 +18,8 @@ var (
 )
 
 // Validate runs every Phase 1 invariant in a fixed order, aggregating failures.
+//
+//nolint:gocyclo // linear list of Phase-1 invariants (header, refs, phase-gated fields, duplicates); splitting into helpers scatters the invariant set without reducing complexity.
 func (s *AgentSpec) Validate() error {
 	var errs Errors
 

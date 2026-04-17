@@ -62,6 +62,7 @@ type resolved struct {
 	specSnapshot *spec.AgentSpec
 }
 
+//nolint:gocyclo // linear dispatch over the 11 Phase-1 factory kinds; each block is a registry lookup + Build. Splitting into helpers scatters the kind list without reducing reader cognitive load.
 func resolve(ctx context.Context, s *spec.AgentSpec, r *registry.ComponentRegistry) (*resolved, error) {
 	out := &resolved{specSnapshot: s}
 
