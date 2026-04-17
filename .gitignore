@@ -23,3 +23,5 @@ coverage.html
 
 # Example binaries (go build drops binary in cwd with package dir name)
 /demo
+/sliding-window-filter
+/session-pattern
