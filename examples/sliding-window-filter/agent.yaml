@@ -1,0 +1,18 @@
+apiVersion: forge.praxis-os.dev/v0
+kind: AgentSpec
+metadata:
+  id: forge.examples.sliding-window
+  version: 0.1.0
+  displayName: "Sliding-window memory demo"
+provider:
+  ref: provider.fake@1.0.0
+prompt:
+  system:
+    ref: prompt.demo@1.0.0
+    config:
+      text: "You are a test agent for the sliding-window filter demo."
+filters:
+  preLLM:
+    - ref: filter.sliding-window@1.0.0
+      config:
+        maxTurns: 10
