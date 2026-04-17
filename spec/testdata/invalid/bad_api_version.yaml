@@ -1,0 +1,7 @@
+apiVersion: wrong/v0
+kind: AgentSpec
+metadata: {id: a.b, version: 0.1.0}
+provider: {ref: provider.foo@1.0.0}
+prompt:
+  system:
+    ref: prompt.sys@1.0.0

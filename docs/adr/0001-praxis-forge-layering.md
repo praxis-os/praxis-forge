@@ -4,7 +4,7 @@
 - **Date:** 2026-04-15
 - **Deciders:** praxis-os maintainers
 - **Supersedes:** —
-- **Related:** [`docs/CONTEXT_SEED.md`](../CONTEXT_SEED.md), [`design/forge-overview.md`](../design/forge-overview.md), [`design/mismatches.md`](../design/mismatches.md)
+- **Related:** [`docs/CONTEXT_SEED.md`](../CONTEXT_SEED.md), [`design/forge-overview.md`](../design/forge-overview.md), [`design/registry-interfaces.md`](../design/registry-interfaces.md), [`design/agent-spec-v0.md`](../design/agent-spec-v0.md), [`design/default-toolpacks.md`](../design/default-toolpacks.md), [`design/default-policypacks.md`](../design/default-policypacks.md), [`design/external-registries.md`](../design/external-registries.md), [`design/mismatches.md`](../design/mismatches.md), [`adr/0003-memory-strategy-across-three-levels.md`](0003-memory-strategy-across-three-levels.md)
 
 ## Context
 

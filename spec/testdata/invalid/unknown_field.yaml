@@ -1,0 +1,11 @@
+apiVersion: forge.praxis-os.dev/v0
+kind: AgentSpec
+metadata:
+  id: acme.demo
+  version: 0.1.0
+  bogus: nope
+provider:
+  ref: provider.anthropic@1.0.0
+prompt:
+  system:
+    ref: prompt.demo-system@1.0.0

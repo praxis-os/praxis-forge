@@ -24,6 +24,11 @@ Copied from the source brief, load-bearing:
 - runtime plugin systems, reflection-heavy magic, arbitrary executable config
 - session-resume state (approval, multi-turn history) — those cross
   orchestration's boundary and belong to the caller or `praxis-os`
+- short-, medium-, and long-term memory (context-window management,
+  session continuity, RAG, vector stores) — forge owns zero of these
+  horizons. See [`adr/0003-memory-strategy-across-three-levels.md`](../adr/0003-memory-strategy-across-three-levels.md)
+  for the decision and [`design/memory-and-state.md`](memory-and-state.md)
+  for the patterns users follow.
 
 ## Internal layering
 
@@ -32,7 +37,7 @@ Five areas inside the module:
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ forge (top-level facade)                                        │
-│   Build(ctx, spec, overlays, registry, opts) (*BuiltAgent, …)   │
+│   Build(ctx, spec, registry, opts) (*BuiltAgent, …)             │
 └────────────▲───────────────▲──────────────▲────────────────────┘
              │               │              │
     ┌────────┴─────┐ ┌───────┴──────┐ ┌─────┴──────┐
@@ -107,11 +112,12 @@ Single import for consumers:
 ```go
 built, err := forge.Build(ctx,
     spec,          // loaded via forge.LoadSpec
-    overlays,      // []forge.AgentOverlay
     registry,      // *forge.ComponentRegistry
     forge.WithTelemetry(t),
     forge.WithLogger(l),
 )
+// Phase 2 grows this signature with an `overlays []forge.AgentOverlay`
+// parameter between spec and registry.
 if err != nil { ... }
 
 result, err := built.Invoke(ctx, praxis.InvocationRequest{ ... })
@@ -144,12 +150,21 @@ AgentSpec (yaml) ─▶ parse ─▶ validate ─▶ normalize ─▶ + overlays
 ## Phase roadmap (from seed, with module-internal notes)
 
 - **Phase 0 — contracts.** This document and siblings. No code.
-- **Phase 1 — minimum slice.** `spec/` loader + strict validation, one
-  typed registry, one provider, one policy pack, one tool pack,
-  materialization into a real `*orchestrator.Orchestrator`, minimal Go
-  API, one example, unit tests on parser/validator/builder.
-- **Phase 2 — composition depth.** Overlays, `extends:`, canonical
-  manifest, deterministic build (stable hashing), richer inspection.
+- **Phase 1 — minimum vertical slice.** `spec/` loader + strict
+  validation, one typed registry, one factory per kernel seam (11
+  kinds including `prompt_asset`), composition adapters, materialization
+  into a real `*orchestrator.Orchestrator`, minimal Go API, one
+  realistic demo, unit + offline integration tests. Detailed scope
+  in `docs/superpowers/specs/2026-04-15-praxis-forge-phase-1-design.md`.
+  No overlays in the `Build` signature; added in Phase 2. The broader
+  default component set described in
+  [`default-toolpacks.md`](default-toolpacks.md) and
+  [`default-policypacks.md`](default-policypacks.md) is a target that
+  accrues across Phase 1.x → Phase 2; Phase 1 itself ships one factory
+  per seam.
+- **Phase 2 — composition depth.** `Build` signature grows
+  `overlays []AgentOverlay`. Overlays, `extends:`, canonical manifest,
+  deterministic build (stable hashing), richer inspection.
 - **Phase 3 — skills.** Skill registry, expansion rules, prompt-fragment
   merge, dependency/conflict validation, output contracts.
 - **Phase 4 — MCP consume.** MCP imports, remote metadata normalization,

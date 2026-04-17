@@ -31,6 +31,7 @@ type Kind string
 
 const (
     KindProvider           Kind = "provider"
+    KindPromptAsset        Kind = "prompt_asset"
     KindToolPack           Kind = "tool_pack"
     KindPolicyPack         Kind = "policy_pack"
     KindPreLLMFilter       Kind = "pre_llm_filter"
@@ -53,30 +54,39 @@ type ID string
 
 ### `Factory` — one interface, one Build method per kind
 
-The registry stores typed factories. Each factory carries its own input
-schema (JSON Schema or a Go-typed decoder contract) and produces the
+The registry stores typed factories. Each factory decodes its own
+typed config from a generic `map[string]any` and produces the
 corresponding praxis seam.
 
-Illustrative sketch — actual Go types will be split per kind to avoid
-generic-map inputs:
+> **Phase 1 note.** Factory interfaces carry only `ID`, `Description`,
+> and `Build(ctx, cfg map[string]any)`. Each factory decodes `cfg` into
+> its own typed struct. JSON Schema introspection is deferred to Phase 2
+> when lockfile / manifest tooling needs it.
+
+Illustrative sketch — actual Go types are split per kind to avoid
+generic-map outputs leaking into the build layer:
 
 ```go
-// ProviderFactory constructs an llm.Provider from typed config.
+// ProviderFactory constructs an llm.Provider from config.
 type ProviderFactory interface {
     ID() ID
-    Kind() Kind                          // always KindProvider
     Description() string
-    ConfigSchema() json.RawMessage       // JSON Schema describing config
-    Build(ctx context.Context, raw json.RawMessage) (llm.Provider, error)
+    Build(ctx context.Context, cfg map[string]any) (llm.Provider, error)
+}
+
+// PromptAssetFactory constructs the string body of a registered prompt.
+// Each distinct prompt id is a separate registration.
+type PromptAssetFactory interface {
+    ID() ID
+    Description() string
+    Build(ctx context.Context, cfg map[string]any) (string, error)
 }
 
 // ToolPackFactory constructs a tools.Invoker plus declared metadata.
 type ToolPackFactory interface {
     ID() ID
-    Kind() Kind                          // KindToolPack
     Description() string
-    ConfigSchema() json.RawMessage
-    Build(ctx context.Context, raw json.RawMessage) (ToolPack, error)
+    Build(ctx context.Context, cfg map[string]any) (ToolPack, error)
 }
 
 // ToolPack is the value produced by a tool-pack factory. It is what the

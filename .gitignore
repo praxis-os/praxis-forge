@@ -20,3 +20,6 @@ coverage.html
 # Local tooling
 /bin/
 /dist/
+
+# Example binaries (go build drops binary in cwd with package dir name)
+/demo
