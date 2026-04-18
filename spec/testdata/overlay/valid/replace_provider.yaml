@@ -1,0 +1,9 @@
+apiVersion: forge.praxis-os.dev/v0
+kind: AgentOverlay
+metadata:
+  name: prod-override
+spec:
+  provider:
+    ref: provider.anthropic@1.0.0
+    config:
+      model: claude-opus-4-7
