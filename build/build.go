@@ -103,12 +103,25 @@ func Build(ctx context.Context, ns *spec.NormalizedSpec, r *registry.ComponentRe
 }
 
 func buildManifest(s *spec.AgentSpec, res *resolved, ns *spec.NormalizedSpec) manifest.Manifest {
-	_ = ns // TODO: Phase 3 will fill in overlay attribution
 	m := manifest.Manifest{
 		SpecID:      s.Metadata.ID,
 		SpecVersion: s.Metadata.Version,
 		BuiltAt:     time.Now().UTC(),
 	}
+
+	if len(ns.ExtendsChain) > 0 {
+		m.ExtendsChain = append([]string(nil), ns.ExtendsChain...)
+	}
+	if len(ns.Overlays) > 0 {
+		m.Overlays = make([]manifest.OverlayAttribution, 0, len(ns.Overlays))
+		for _, o := range ns.Overlays {
+			m.Overlays = append(m.Overlays, manifest.OverlayAttribution{
+				Name: o.Name,
+				File: o.File,
+			})
+		}
+	}
+
 	m.Resolved = append(m.Resolved, manifest.ResolvedComponent{
 		Kind:   string(registry.KindProvider),
 		ID:     string(res.providerID),
