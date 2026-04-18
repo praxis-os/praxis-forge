@@ -19,9 +19,9 @@ func (f provFac) Build(context.Context, map[string]any) (llm.Provider, error) { 
 
 type promptFac struct{ id registry.ID }
 
-func (f promptFac) ID() registry.ID                                        { return f.id }
-func (f promptFac) Description() string                                    { return "p" }
-func (f promptFac) Build(context.Context, map[string]any) (string, error)  { return "hi", nil }
+func (f promptFac) ID() registry.ID                                       { return f.id }
+func (f promptFac) Description() string                                   { return "p" }
+func (f promptFac) Build(context.Context, map[string]any) (string, error) { return "hi", nil }
 
 func TestResolveProviderAndPrompt(t *testing.T) {
 	r := registry.NewComponentRegistry()

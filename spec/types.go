@@ -63,7 +63,7 @@ type BudgetRef struct {
 }
 
 type BudgetOverrides struct {
-	MaxWallClock        string `yaml:"maxWallClock,omitempty"`   // duration, e.g. "30s"
+	MaxWallClock        string `yaml:"maxWallClock,omitempty"` // duration, e.g. "30s"
 	MaxInputTokens      int64  `yaml:"maxInputTokens,omitempty"`
 	MaxOutputTokens     int64  `yaml:"maxOutputTokens,omitempty"`
 	MaxToolCalls        int64  `yaml:"maxToolCalls,omitempty"`

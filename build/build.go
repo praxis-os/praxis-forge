@@ -17,10 +17,10 @@ import (
 // BuiltAgent is a stateless wiring + metadata bundle. Per-turn state lives in
 // the embedded Orchestrator; conversation history is the caller's concern.
 type BuiltAgent struct {
-	Orchestrator  *orchestrator.Orchestrator
-	Manifest      manifest.Manifest
-	SystemPrompt  string
-	ToolDefs      []llm.ToolDefinition
+	Orchestrator   *orchestrator.Orchestrator
+	Manifest       manifest.Manifest
+	SystemPrompt   string
+	ToolDefs       []llm.ToolDefinition
 	NormalizedSpec *spec.NormalizedSpec
 }
 
@@ -94,10 +94,10 @@ func Build(ctx context.Context, ns *spec.NormalizedSpec, r *registry.ComponentRe
 	}
 
 	return &BuiltAgent{
-		Orchestrator:  orch,
-		Manifest:      buildManifest(&ns.Spec, res, ns),
-		SystemPrompt:  res.systemPrompt,
-		ToolDefs:      toolDefs,
+		Orchestrator:   orch,
+		Manifest:       buildManifest(&ns.Spec, res, ns),
+		SystemPrompt:   res.systemPrompt,
+		ToolDefs:       toolDefs,
 		NormalizedSpec: ns,
 	}, nil
 }
