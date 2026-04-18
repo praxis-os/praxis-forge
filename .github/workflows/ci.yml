@@ -1,30 +1,305 @@
-name: ci
+name: CI
+
 on:
-  push:
-    branches: [main]
   pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  statuses: write
+  pull-requests: write
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: "1.26"
-          cache-dependency-path: go.sum
-      - name: Test
-        run: go test ./... -race
-      - name: Vet
-        run: go vet ./...
-
   lint:
+    name: lint
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish pending status
+        if: github.event_name == 'workflow_dispatch' && startsWith(github.ref_name, 'release-please--branches--')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATUS_CONTEXT: ${{ github.job }}
+          STATUS_STATE: pending
+          STATUS_DESCRIPTION: CI running via workflow_dispatch
+        run: .github/scripts/publish-dispatched-status.sh
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.x"
+      - name: Run golangci-lint
+        run: |
+          go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
+          golangci-lint run
+      - name: Publish success status
+        if: success() && github.event_name == 'workflow_dispatch' && startsWith(github.ref_name, 'release-please--branches--')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATUS_CONTEXT: ${{ github.job }}
+          STATUS_STATE: success
+          STATUS_DESCRIPTION: CI passed via workflow_dispatch
+        run: .github/scripts/publish-dispatched-status.sh
+      - name: Publish failure status
+        if: failure() && github.event_name == 'workflow_dispatch' && startsWith(github.ref_name, 'release-please--branches--')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATUS_CONTEXT: ${{ github.job }}
+          STATUS_STATE: failure
+          STATUS_DESCRIPTION: CI failed via workflow_dispatch
+        run: .github/scripts/publish-dispatched-status.sh
+
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish pending status
+        if: github.event_name == 'workflow_dispatch' && startsWith(github.ref_name, 'release-please--branches--')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATUS_CONTEXT: ${{ github.job }}
+          STATUS_STATE: pending
+          STATUS_DESCRIPTION: CI running via workflow_dispatch
+        run: .github/scripts/publish-dispatched-status.sh
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.x"
+      - name: Run tests with coverage
+        # TODO: add a coverage threshold gate (praxis uses 85%) once coverage
+        # is established. For now, just generate the profile.
+        run: |
+          go test -race -coverprofile=coverage.out -count=1 $(go list ./... | grep -v /examples/)
+          go tool cover -func=coverage.out | tail -5
+      - name: Publish success status
+        if: success() && github.event_name == 'workflow_dispatch' && startsWith(github.ref_name, 'release-please--branches--')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATUS_CONTEXT: ${{ github.job }}
+          STATUS_STATE: success
+          STATUS_DESCRIPTION: CI passed via workflow_dispatch
+        run: .github/scripts/publish-dispatched-status.sh
+      - name: Publish failure status
+        if: failure() && github.event_name == 'workflow_dispatch' && startsWith(github.ref_name, 'release-please--branches--')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATUS_CONTEXT: ${{ github.job }}
+          STATUS_STATE: failure
+          STATUS_DESCRIPTION: CI failed via workflow_dispatch
+        run: .github/scripts/publish-dispatched-status.sh
+
+  commitsar:
+    name: commitsar
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Publish pending status
+        if: github.event_name == 'workflow_dispatch' && startsWith(github.ref_name, 'release-please--branches--')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATUS_CONTEXT: ${{ github.job }}
+          STATUS_STATE: pending
+          STATUS_DESCRIPTION: CI running via workflow_dispatch
+        run: .github/scripts/publish-dispatched-status.sh
+      - name: Run commitsar on PR commits
+        if: github.event_name == 'pull_request'
+        uses: aevea/commitsar@v0.20.2
+      - name: Validate release-branch commit headers
+        if: github.event_name == 'workflow_dispatch'
+        run: .github/scripts/validate-release-branch-commits.sh
+      - name: Publish success status
+        if: success() && github.event_name == 'workflow_dispatch' && startsWith(github.ref_name, 'release-please--branches--')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATUS_CONTEXT: ${{ github.job }}
+          STATUS_STATE: success
+          STATUS_DESCRIPTION: CI passed via workflow_dispatch
+        run: .github/scripts/publish-dispatched-status.sh
+      - name: Publish failure status
+        if: failure() && github.event_name == 'workflow_dispatch' && startsWith(github.ref_name, 'release-please--branches--')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATUS_CONTEXT: ${{ github.job }}
+          STATUS_STATE: failure
+          STATUS_DESCRIPTION: CI failed via workflow_dispatch
+        run: .github/scripts/publish-dispatched-status.sh
+
+  banned-grep:
+    name: banned-grep
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish pending status
+        if: github.event_name == 'workflow_dispatch' && startsWith(github.ref_name, 'release-please--branches--')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATUS_CONTEXT: ${{ github.job }}
+          STATUS_STATE: pending
+          STATUS_DESCRIPTION: CI running via workflow_dispatch
+        run: .github/scripts/publish-dispatched-status.sh
+      - name: Check for banned identifiers
+        run: make banned-grep
+      - name: Publish success status
+        if: success() && github.event_name == 'workflow_dispatch' && startsWith(github.ref_name, 'release-please--branches--')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATUS_CONTEXT: ${{ github.job }}
+          STATUS_STATE: success
+          STATUS_DESCRIPTION: CI passed via workflow_dispatch
+        run: .github/scripts/publish-dispatched-status.sh
+      - name: Publish failure status
+        if: failure() && github.event_name == 'workflow_dispatch' && startsWith(github.ref_name, 'release-please--branches--')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATUS_CONTEXT: ${{ github.job }}
+          STATUS_STATE: failure
+          STATUS_DESCRIPTION: CI failed via workflow_dispatch
+        run: .github/scripts/publish-dispatched-status.sh
+
+  spdx-check:
+    name: spdx-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish pending status
+        if: github.event_name == 'workflow_dispatch' && startsWith(github.ref_name, 'release-please--branches--')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATUS_CONTEXT: ${{ github.job }}
+          STATUS_STATE: pending
+          STATUS_DESCRIPTION: CI running via workflow_dispatch
+        run: .github/scripts/publish-dispatched-status.sh
+      - name: Check SPDX headers on all Go files
+        run: make spdx-check
+      - name: Publish success status
+        if: success() && github.event_name == 'workflow_dispatch' && startsWith(github.ref_name, 'release-please--branches--')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATUS_CONTEXT: ${{ github.job }}
+          STATUS_STATE: success
+          STATUS_DESCRIPTION: CI passed via workflow_dispatch
+        run: .github/scripts/publish-dispatched-status.sh
+      - name: Publish failure status
+        if: failure() && github.event_name == 'workflow_dispatch' && startsWith(github.ref_name, 'release-please--branches--')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATUS_CONTEXT: ${{ github.job }}
+          STATUS_STATE: failure
+          STATUS_DESCRIPTION: CI failed via workflow_dispatch
+        run: .github/scripts/publish-dispatched-status.sh
+
+  dco:
+    name: dco
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Publish pending status
+        if: github.event_name == 'workflow_dispatch' && startsWith(github.ref_name, 'release-please--branches--')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATUS_CONTEXT: ${{ github.job }}
+          STATUS_STATE: pending
+          STATUS_DESCRIPTION: CI running via workflow_dispatch
+        run: .github/scripts/publish-dispatched-status.sh
+      # Validates that every non-merge commit in the PR carries a
+      # Signed-off-by: line (DCO v1.1). probot/dco is the GitHub App
+      # enforcing this as a required check; this step provides an
+      # equivalent in-workflow validation.
+      - name: Validate DCO Signed-off-by lines
+        run: |
+          MISSING=""
+          while IFS= read -r sha; do
+            BODY=$(git show -s --format="%B" "$sha")
+            if ! echo "$BODY" | grep -q "^Signed-off-by:"; then
+              SUBJECT=$(git show -s --format="%s" "$sha")
+              MISSING="${MISSING}  ${sha} ${SUBJECT}\n"
+            fi
+          done < <(git log --no-merges --format="%H" "origin/main..HEAD")
+          if [ -n "$MISSING" ]; then
+            echo "Commits missing DCO Signed-off-by (git commit -s):"
+            printf "$MISSING"
+            exit 1
+          fi
+          echo "DCO check: PASS"
+      - name: Publish success status
+        if: success() && github.event_name == 'workflow_dispatch' && startsWith(github.ref_name, 'release-please--branches--')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATUS_CONTEXT: ${{ github.job }}
+          STATUS_STATE: success
+          STATUS_DESCRIPTION: CI passed via workflow_dispatch
+        run: .github/scripts/publish-dispatched-status.sh
+      - name: Publish failure status
+        if: failure() && github.event_name == 'workflow_dispatch' && startsWith(github.ref_name, 'release-please--branches--')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATUS_CONTEXT: ${{ github.job }}
+          STATUS_STATE: failure
+          STATUS_DESCRIPTION: CI failed via workflow_dispatch
+        run: .github/scripts/publish-dispatched-status.sh
+
+  bench:
+    name: bench
+    runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.26"
-      - uses: golangci/golangci-lint-action@v8
+          go-version: "1.26.x"
+      - name: Restore main-branch benchmark baseline
+        id: cache-restore
+        uses: actions/cache/restore@v4
         with:
-          version: v2.11.4
+          path: bench-main.txt
+          key: bench-main-${{ github.sha }}
+          restore-keys: bench-main-
+      - name: Run benchmarks
+        run: go test -bench=. -benchmem -count=10 ./... | tee bench-new.txt || true
+      - name: Install benchstat
+        run: go install golang.org/x/perf/cmd/benchstat@latest
+      - name: Compare with baseline
+        id: benchstat
+        run: |
+          if [ -f bench-main.txt ]; then
+            benchstat bench-main.txt bench-new.txt | tee benchstat-output.txt
+          else
+            echo "No cached baseline found; showing raw results." | tee benchstat-output.txt
+            cat bench-new.txt >> benchstat-output.txt
+          fi
+      - name: Post benchstat results as PR comment
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          BODY=$(cat benchstat-output.txt)
+          COMMENT="## Benchmark comparison (benchstat)
+
+          \`\`\`
+          ${BODY}
+          \`\`\`
+
+          <sub>Generated by the \`bench\` CI job. Baseline: \`main\` post-merge cache.</sub>"
+
+          # Delete any previous benchstat comment from this workflow to avoid spam.
+          EXISTING=$(gh api "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" \
+            --jq '.[] | select(.body | contains("Benchmark comparison (benchstat)")) | .id' 2>/dev/null || true)
+          for id in $EXISTING; do
+            gh api -X DELETE "repos/${{ github.repository }}/issues/comments/${id}" 2>/dev/null || true
+          done
+
+          gh pr comment "${{ github.event.pull_request.number }}" --body "${COMMENT}"
+
+  govulncheck:
+    name: govulncheck
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: golang/govulncheck-action@v1
+        with:
+          go-version-input: "1.26.x"
+          govulncheck-version: "latest"

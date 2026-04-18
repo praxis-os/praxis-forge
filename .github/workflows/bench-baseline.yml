@@ -1,0 +1,26 @@
+name: Benchmark Baseline
+
+# Runs on every push to main and caches results for PR bench comparisons.
+# The `|| true` wrapper around `go test -bench` prevents this workflow from
+# failing noisily while praxis-forge has no benchmarks yet; remove it once
+# benchmarks exist in `./...`.
+on:
+  push:
+    branches: [main]
+
+jobs:
+  bench-baseline:
+    name: bench-baseline
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.x"
+      - name: Run benchmarks
+        run: go test -bench=. -benchmem -count=5 ./... > bench-main.txt || true
+      - name: Cache benchmark baseline
+        uses: actions/cache/save@v4
+        with:
+          path: bench-main.txt
+          key: bench-main-${{ github.sha }}
