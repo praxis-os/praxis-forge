@@ -43,7 +43,14 @@ func Build(ctx context.Context, s *spec.AgentSpec, r *registry.ComponentRegistry
 	for _, opt := range opts {
 		opt(&o)
 	}
-	inner, err := build.Build(ctx, s, r)
+
+	// Normalize: merge extends chain and apply overlays.
+	ns, err := spec.Normalize(ctx, s, o.overlays, o.store)
+	if err != nil {
+		return nil, err
+	}
+
+	inner, err := build.Build(ctx, ns, r)
 	if err != nil {
 		return nil, err
 	}
@@ -54,6 +61,24 @@ func Build(ctx context.Context, s *spec.AgentSpec, r *registry.ComponentRegistry
 type Option func(*options)
 
 type options struct {
-	// Reserved for Phase 2. Phase 1 has no knobs but keeps the type shape
-	// stable so callers can adopt now.
+	overlays []*spec.AgentOverlay
+	store    spec.SpecStore
+}
+
+// WithOverlays appends overlays to the build. Overlays are applied in slice
+// order (last wins). Multiple WithOverlays calls accumulate. Passing nil or
+// no overlays is a no-op.
+func WithOverlays(overlays ...*spec.AgentOverlay) Option {
+	return func(o *options) {
+		o.overlays = append(o.overlays, overlays...)
+	}
+}
+
+// WithSpecStore configures the SpecStore for extends resolution. Required
+// whenever spec declares Extends. If Extends is present but no SpecStore
+// is configured, Normalize returns ErrNoSpecStore.
+func WithSpecStore(store spec.SpecStore) Option {
+	return func(o *options) {
+		o.store = store
+	}
 }
