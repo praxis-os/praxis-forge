@@ -25,3 +25,6 @@ coverage.html
 /demo
 /sliding-window-filter
 /session-pattern
+
+# Git worktrees
+.worktrees/
