@@ -33,6 +33,11 @@ const (
 	// merge. Provenance.Step is the overlay's position in the
 	// overlays slice (0 = first overlay applied).
 	RoleOverlay
+
+	// Role string constants for error messages.
+	roleBaseStr    = "base"
+	roleParentStr  = "parent"
+	roleOverlayStr = "overlay"
 )
 
 // String returns a short stable label for the role, used in error
@@ -40,11 +45,11 @@ const (
 func (r Role) String() string {
 	switch r {
 	case RoleBase:
-		return "base"
+		return roleBaseStr
 	case RoleParent:
-		return "parent"
+		return roleParentStr
 	case RoleOverlay:
-		return "overlay"
+		return roleOverlayStr
 	default:
 		return fmt.Sprintf("role(%d)", r)
 	}
@@ -59,17 +64,17 @@ func (r Role) String() string {
 func (p Provenance) describe() string {
 	switch p.Role {
 	case RoleBase:
-		return "base"
+		return roleBaseStr
 	case RoleParent:
 		if p.File != "" {
-			return fmt.Sprintf("parent #%d at %s:%d", p.Step, p.File, p.Line)
+			return fmt.Sprintf("%s #%d at %s:%d", roleParentStr, p.Step, p.File, p.Line)
 		}
-		return fmt.Sprintf("parent #%d", p.Step)
+		return fmt.Sprintf("%s #%d", roleParentStr, p.Step)
 	case RoleOverlay:
 		if p.File != "" {
-			return fmt.Sprintf("overlay #%d at %s:%d", p.Step, p.File, p.Line)
+			return fmt.Sprintf("%s #%d at %s:%d", roleOverlayStr, p.Step, p.File, p.Line)
 		}
-		return fmt.Sprintf("overlay #%d", p.Step)
+		return fmt.Sprintf("%s #%d", roleOverlayStr, p.Step)
 	default:
 		return p.Role.String()
 	}
