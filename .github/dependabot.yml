@@ -7,8 +7,10 @@ updates:
       day: monday
     open-pull-requests-limit: 5
     commit-message:
+      # Bare prefix only: combining `prefix: "chore(deps)"` with
+      # `include: scope` makes Dependabot emit `chore(deps)(deps): ...`,
+      # which is invalid Conventional Commits and fails commitsar.
       prefix: "chore(deps)"
-      include: scope
     labels:
       - dependencies
       - go
@@ -20,8 +22,8 @@ updates:
       day: monday
     open-pull-requests-limit: 5
     commit-message:
+      # See note above; same rationale for dropping `include: scope`.
       prefix: "chore(ci)"
-      include: scope
     labels:
       - dependencies
       - github-actions
