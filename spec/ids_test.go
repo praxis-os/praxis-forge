@@ -16,8 +16,8 @@ func TestParseID(t *testing.T) {
 		{"bad", "", "", true},
 		{"nope@", "", "", true},
 		{"@1.0.0", "", "", true},
-		{"Foo@1.0.0", "", "", true},   // uppercase rejected
-		{"foo@1", "", "", true},        // non-semver rejected
+		{"Foo@1.0.0", "", "", true}, // uppercase rejected
+		{"foo@1", "", "", true},     // non-semver rejected
 		{"foo@1.2", "", "", true},
 	}
 	for _, c := range cases {

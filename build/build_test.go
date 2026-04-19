@@ -16,9 +16,9 @@ import (
 // minProvider implements llm.Provider for build tests (never invoked).
 type minProvider struct{}
 
-func (minProvider) Name() string                      { return "min" }
-func (minProvider) SupportsParallelToolCalls() bool   { return false }
-func (minProvider) Capabilities() llm.Capabilities    { return llm.Capabilities{} }
+func (minProvider) Name() string                    { return "min" }
+func (minProvider) SupportsParallelToolCalls() bool { return false }
+func (minProvider) Capabilities() llm.Capabilities  { return llm.Capabilities{} }
 func (minProvider) Complete(_ context.Context, _ llm.LLMRequest) (llm.LLMResponse, error) {
 	return llm.LLMResponse{}, nil
 }
@@ -30,22 +30,22 @@ func (minProvider) Stream(_ context.Context, _ llm.LLMRequest) (<-chan llm.LLMSt
 
 type minProvFac struct{ id registry.ID }
 
-func (f minProvFac) ID() registry.ID              { return f.id }
-func (f minProvFac) Description() string           { return "" }
+func (f minProvFac) ID() registry.ID     { return f.id }
+func (f minProvFac) Description() string { return "" }
 func (f minProvFac) Build(context.Context, map[string]any) (llm.Provider, error) {
 	return minProvider{}, nil
 }
 
 type minPromptFac struct{ id registry.ID }
 
-func (f minPromptFac) ID() registry.ID             { return f.id }
-func (f minPromptFac) Description() string          { return "" }
+func (f minPromptFac) ID() registry.ID                                       { return f.id }
+func (f minPromptFac) Description() string                                   { return "" }
 func (f minPromptFac) Build(context.Context, map[string]any) (string, error) { return "hi", nil }
 
 type minBudgetFac struct{ id registry.ID }
 
-func (f minBudgetFac) ID() registry.ID             { return f.id }
-func (f minBudgetFac) Description() string          { return "" }
+func (f minBudgetFac) ID() registry.ID     { return f.id }
+func (f minBudgetFac) Description() string { return "" }
 func (f minBudgetFac) Build(context.Context, map[string]any) (registry.BudgetProfile, error) {
 	return registry.BudgetProfile{
 		Guard:         budget.NullGuard{},

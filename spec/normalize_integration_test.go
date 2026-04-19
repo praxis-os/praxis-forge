@@ -37,8 +37,8 @@ func TestNormalize_LockedFieldViolation(t *testing.T) {
 
 // fixtureResult matches the JSON structure in want.json files.
 type fixtureResult struct {
-	Spec         *AgentSpec        `json:"spec"`
-	ExtendsChain []string          `json:"extendsChain"`
+	Spec         *AgentSpec           `json:"spec"`
+	ExtendsChain []string             `json:"extendsChain"`
 	Overlays     []OverlayAttribution `json:"overlays"`
 }
 

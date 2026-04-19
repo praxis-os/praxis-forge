@@ -68,8 +68,10 @@ func (f *slidingWindowFilter) Filter(
 // slidingWindowFactory adapts slidingWindowFilter to the forge registry.
 type slidingWindowFactory struct{ id registry.ID }
 
-func (f slidingWindowFactory) ID() registry.ID     { return f.id }
-func (f slidingWindowFactory) Description() string { return "sliding-window filter: keep last N non-system turns" }
+func (f slidingWindowFactory) ID() registry.ID { return f.id }
+func (f slidingWindowFactory) Description() string {
+	return "sliding-window filter: keep last N non-system turns"
+}
 
 func (f slidingWindowFactory) Build(_ context.Context, cfg map[string]any) (hooks.PreLLMFilter, error) {
 	n, _ := cfg["maxTurns"].(int)
