@@ -24,7 +24,7 @@ jobs:
           STATUS_STATE: pending
           STATUS_DESCRIPTION: CI running via workflow_dispatch
         run: .github/scripts/publish-dispatched-status.sh
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: "1.26.x"
       - name: Run golangci-lint
@@ -61,7 +61,7 @@ jobs:
           STATUS_STATE: pending
           STATUS_DESCRIPTION: CI running via workflow_dispatch
         run: .github/scripts/publish-dispatched-status.sh
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: "1.26.x"
       - name: Run tests with coverage
@@ -247,7 +247,7 @@ jobs:
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: "1.26.x"
       - name: Restore main-branch benchmark baseline
