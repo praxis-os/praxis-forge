@@ -7,10 +7,13 @@ updates:
       day: monday
     open-pull-requests-limit: 5
     commit-message:
-      # Bare prefix only: combining `prefix: "chore(deps)"` with
-      # `include: scope` makes Dependabot emit `chore(deps)(deps): ...`,
-      # which is invalid Conventional Commits and fails commitsar.
-      prefix: "chore(deps)"
+      # Prefix must NOT contain parentheses: Dependabot auto-appends
+      # `(deps)` as a scope when the prefix already has a parenthesised
+      # group, producing invalid Conventional Commits like
+      # `chore(deps)(deps): …`. Keep the prefix as a bare type and let
+      # `include: scope` add the single scope Dependabot wants.
+      prefix: "chore"
+      include: scope
     labels:
       - dependencies
       - go
@@ -22,8 +25,11 @@ updates:
       day: monday
     open-pull-requests-limit: 5
     commit-message:
-      # See note above; same rationale for dropping `include: scope`.
-      prefix: "chore(ci)"
+      # Use `ci` type so CI-dep bumps are distinguishable in git log
+      # from code-dep bumps (`chore`). Both are omitted from the
+      # release-please changelog by default. See note above on parens.
+      prefix: "ci"
+      include: scope
     labels:
       - dependencies
       - github-actions
