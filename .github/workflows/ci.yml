@@ -104,7 +104,7 @@ jobs:
         run: .github/scripts/publish-dispatched-status.sh
       - name: Run commitsar on PR commits
         if: github.event_name == 'pull_request'
-        uses: aevea/commitsar@v0.20.2
+        uses: aevea/commitsar@v1.0.3
       - name: Validate release-branch commit headers
         if: github.event_name == 'workflow_dispatch'
         run: .github/scripts/validate-release-branch-commits.sh
