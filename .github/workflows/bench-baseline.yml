@@ -20,7 +20,7 @@ jobs:
       - name: Run benchmarks
         run: go test -bench=. -benchmem -count=5 ./... > bench-main.txt || true
       - name: Cache benchmark baseline
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: bench-main.txt
           key: bench-main-${{ github.sha }}
