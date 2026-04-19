@@ -113,11 +113,12 @@ Single import for consumers:
 built, err := forge.Build(ctx,
     spec,          // loaded via forge.LoadSpec
     registry,      // *forge.ComponentRegistry
-    forge.WithTelemetry(t),
-    forge.WithLogger(l),
+    forge.WithOverlays(prodOverlay, regionOverlay),  // Phase 2a
+    forge.WithSpecStore(spec.MapSpecStore{...}),     // Phase 2a, required if spec uses extends:
 )
-// Phase 2 grows this signature with an `overlays []forge.AgentOverlay`
-// parameter between spec and registry.
+// Build signature is stable across phases: the positional slots
+// remain (ctx, spec, registry); every Phase 2+ input enters via
+// forge.With*(...) functional options. See ADR 0004.
 if err != nil { ... }
 
 result, err := built.Invoke(ctx, praxis.InvocationRequest{ ... })
@@ -162,9 +163,20 @@ AgentSpec (yaml) ─▶ parse ─▶ validate ─▶ normalize ─▶ + overlays
   [`default-policypacks.md`](default-policypacks.md) is a target that
   accrues across Phase 1.x → Phase 2; Phase 1 itself ships one factory
   per seam.
-- **Phase 2 — composition depth.** `Build` signature grows
-  `overlays []AgentOverlay`. Overlays, `extends:`, canonical manifest,
-  deterministic build (stable hashing), richer inspection.
+- **Phase 2 — composition depth.** Split into two cuts.
+  - **Phase 2a (shipped):** `forge.WithOverlays` + `forge.WithSpecStore`
+    options, declarative `AgentOverlay` (typed Go struct mirror of
+    AgentSpec, all fields optional, tri-state `RefList` wrapper for
+    replaceable lists), `extends:` chain resolution (depth ≤ 8, cycle
+    detection, root-first merge with child-wins), per-field provenance
+    tracking (`NormalizedSpec.Provenance(fieldPath)`), locked-field
+    protection (apiVersion, kind, metadata.id, metadata.version cannot
+    drift through extends or overlays). Manifest gains `extendsChain`
+    and `overlays` attribution fields. See
+    [`docs/superpowers/specs/2026-04-18-praxis-forge-phase-2a-design.md`](../superpowers/specs/2026-04-18-praxis-forge-phase-2a-design.md).
+  - **Phase 2b (next):** canonical JSON ordering of `NormalizedSpec`,
+    stable hash on `Manifest` (`normalizedHash`), richer inspection
+    surfaces (capability flags, dependency graph export).
 - **Phase 3 — skills.** Skill registry, expansion rules, prompt-fragment
   merge, dependency/conflict validation, output contracts.
 - **Phase 4 — MCP consume.** MCP imports, remote metadata normalization,

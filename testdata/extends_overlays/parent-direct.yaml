@@ -1,0 +1,34 @@
+apiVersion: forge.praxis-os.dev/v0
+kind: AgentSpec
+metadata:
+  id: forge.test.grandparent
+  version: 1.0.0
+extends:
+  - forge.test.grandparent@1.0.0
+provider:
+  ref: provider.fake@1.0.0
+prompt:
+  system:
+    ref: prompt.sys@1.0.0
+    config:
+      text: "You are a base agent."
+policies:
+  - ref: policypack.pii-redaction@1.0.0
+    config:
+      strictness: low
+filters:
+  preLLM:
+    - ref: filter.secret-scrubber@1.0.0
+budget:
+  ref: budgetprofile.default-tier1@1.0.0
+telemetry:
+  ref: telemetryprofile.slog@1.0.0
+  config:
+    level: info
+credentials:
+  ref: credresolver.env@1.0.0
+identity:
+  ref: identitysigner.ed25519@1.0.0
+  config:
+    issuer: forge-test
+    tokenLifetimeSeconds: 60

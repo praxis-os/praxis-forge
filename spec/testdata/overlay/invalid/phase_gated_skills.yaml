@@ -1,0 +1,7 @@
+apiVersion: forge.praxis-os.dev/v0
+kind: AgentOverlay
+metadata:
+  name: bad
+spec:
+  skills:
+    - ref: skill.foo@1.0.0

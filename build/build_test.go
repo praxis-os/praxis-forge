@@ -68,7 +68,12 @@ func TestBuild_MinimalSpec(t *testing.T) {
 		Budget:     &spec.BudgetRef{Ref: "budgetprofile.default@1.0.0"},
 	}
 
-	built, err := Build(context.Background(), s, r)
+	ns, err := spec.Normalize(context.Background(), s, nil, nil)
+	if err != nil {
+		t.Fatalf("normalize: %v", err)
+	}
+
+	built, err := Build(context.Background(), ns, r)
 	if err != nil {
 		t.Fatalf("build: %v", err)
 	}

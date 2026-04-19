@@ -1,0 +1,10 @@
+apiVersion: forge.praxis-os.dev/v0
+kind: AgentOverlay
+metadata:
+  name: overlay-2-budget-modification
+spec:
+  budget:
+    ref: budgetprofile.default-tier1@1.0.0
+    overrides:
+      maxToolCalls: 10
+      maxInputTokens: 50000

@@ -25,8 +25,8 @@ metadata:
     domain: support
     tier: production
 
-extends:                          # optional; acyclic; Phase 2
-  - acme.base-agent@2.0.0
+extends:                          # optional; acyclic; depth ≤ 8; Phase 2a
+  - acme.base-agent@2.0.0         # resolved via SpecStore passed to Build
 
 provider:                         # required
   ref: provider.anthropic         # factory id in the registry
@@ -86,33 +86,52 @@ identity:
 
 outputContract:                   # Phase 3 (skills-driven); optional
   null
-
-overlays: []                      # siblings, applied in order; see below
 ```
 
 ## Overlays
 
-Overlays target the same keyed structure. They are applied **after**
-`extends:` resolution and **before** validation of the composed spec.
+Overlays are typed YAML documents whose body mirrors `AgentSpec` with
+every field optional. They are applied **after** `extends:` resolution
+and **before** validation of the merged result. Overlays are sibling
+files passed to `forge.Build` via `forge.WithOverlays(...)`; they are
+not embedded inside an `AgentSpec`.
 
 ```yaml
 apiVersion: forge.praxis-os.dev/v0
 kind: AgentOverlay
 metadata:
-  id: acme.support-triage.staging
-  targets: acme.support-triage
-  version: 1.4.0
-patch:
-  provider.config.model: claude-haiku-4-5-20251001
-  budget.overrides.maxWallClock: 15s
-  policies:
-    append:
-      - ref: policypack.staging-observer@1
+  name: prod-override            # attribution label, surfaced in errors + manifest
+spec:
+  provider:                      # any subset of AgentSpec fields
+    ref: provider.anthropic@1.0.0
+    config:
+      model: claude-opus-4-7
+  policies:                      # replace by default
+    - ref: policypack.staging-observer@1.0.0
+  tools: []                      # explicit empty clears the base list
 ```
 
-Patch keys are dotted paths. Lists support `append`, `prepend`, and
-`replace`. No arbitrary code, no JSONPath expressions, no template
-interpolation — selectors are a small fixed language.
+Phase 2a merge semantics:
+
+- **Lists** (`tools`, `policies`, `filters.preLLM`, etc.) replace the
+  base list when set. The `RefList` wrapper distinguishes "absent"
+  (preserve base), "explicit null/empty" (clear), and "populated"
+  (replace).
+- **`Config map[string]any`** blocks replace the entire map (no deep
+  merge across opaque schemas).
+- **`metadata.labels`** replaces, not merges.
+- **Scalars** that are zero/empty in the overlay preserve the base.
+
+Locked fields (`apiVersion`, `kind`, `metadata.id`, `metadata.version`)
+cannot be touched by an overlay; attempting to do so produces
+`spec.ErrLockedFieldOverride` with attribution to the source overlay.
+
+Phase-gated AgentSpec fields (`extends`, `skills`, `mcpImports`,
+`outputContract`) are deliberately absent from the overlay body, so
+the strict YAML decoder rejects them at parse time.
+
+Overlay count is bounded by `spec.MaxOverlayCount` (16); exceeding the
+bound returns `spec.ErrCompositionLimit`.
 
 ## Referenced kinds (registry factory IDs)
 
@@ -156,8 +175,13 @@ runs. No warnings — each failure aborts the build.
    → build fails. Version mismatch with declared compatibility range →
    build fails.
 5. **Acyclic `extends:` chain.** Cycle detection runs before
-   normalization. Depth is capped (suggested: 8) to catch pathological
-   inheritance.
+   normalization. Depth is capped at `spec.MaxExtendsDepth` (8) to
+   catch pathological inheritance. Both violations surface as
+   `spec.ErrExtendsInvalid` with a typed `*spec.ExtendsError` carrying
+   the resolution chain and a `Reason` of `"cycle"` or `"depth"`.
+   Parents resolve through an injectable `spec.SpecStore`; if the
+   spec declares `Extends` and `Build` was not given a SpecStore via
+   `forge.WithSpecStore(...)`, it returns `spec.ErrNoSpecStore`.
 6. **Stable metadata.** `metadata.id` is immutable for the life of an
    agent; `metadata.version` is strictly semver and required on every
    spec.
@@ -170,11 +194,12 @@ runs. No warnings — each failure aborts the build.
    spec. Runtime material flows through the registry programmatically
    (e.g. credential resolvers receive their secrets store at
    registration time, not via the spec).
-9. **Deterministic canonicalization.** After extends + overlays, the
-   normalizer produces a canonical ordering (alphabetical keys,
-   normalized list ordering for commutative fields, version numbers
-   fully qualified). Two semantically equivalent specs must hash
-   identically.
+9. **Deterministic merge order.** Phase 2a fixes the merge field-iteration
+   order to match `AgentSpec`'s declaration order in `spec/types.go`.
+   Phase 2b layers a canonical JSON serialization plus a stable hash
+   on top of this — two semantically equivalent specs must hash
+   identically. Reordering the `AgentSpec` struct fields changes the
+   hash by design (the hash is bound to the struct shape).
 10. **Budget ceilings are contracts.** `budget.overrides` may only
     *tighten* the referenced profile, never loosen it. The validator
     rejects loosening overrides.

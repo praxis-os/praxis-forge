@@ -1,0 +1,12 @@
+apiVersion: forge.praxis-os.dev/v0
+kind: AgentSpec
+metadata:
+  id: parent.agent
+  version: 1.0.0
+provider:
+  ref: parent.provider@1.0.0
+prompt:
+  system:
+    ref: parent.prompt.system@1.0.0
+tools:
+  - ref: parent.tool@1.0.0

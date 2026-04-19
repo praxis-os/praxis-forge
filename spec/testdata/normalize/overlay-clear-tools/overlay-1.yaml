@@ -1,0 +1,6 @@
+apiVersion: forge.praxis-os.dev/v0
+kind: AgentOverlay
+metadata:
+  name: remove-tools
+spec:
+  tools:

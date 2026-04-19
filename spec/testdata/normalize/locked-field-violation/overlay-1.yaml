@@ -1,0 +1,7 @@
+apiVersion: forge.praxis-os.dev/v0
+kind: AgentOverlay
+metadata:
+  name: bad-override
+spec:
+  metadata:
+    id: different.agent

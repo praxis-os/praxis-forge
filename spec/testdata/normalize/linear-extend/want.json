@@ -1,0 +1,25 @@
+{
+  "spec": {
+    "apiVersion": "forge.praxis-os.dev/v0",
+    "kind": "AgentSpec",
+    "metadata": {
+      "id": "my.agent",
+      "version": "2.0.0"
+    },
+    "provider": {
+      "ref": "base.provider@1.0.0"
+    },
+    "prompt": {
+      "system": {
+        "ref": "base.prompt.system@1.0.0"
+      }
+    },
+    "tools": [
+      {
+        "ref": "my.tool@1.0.0"
+      }
+    ]
+  },
+  "extendsChain": ["parent.agent"],
+  "overlays": []
+}

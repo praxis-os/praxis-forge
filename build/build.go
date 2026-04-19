@@ -17,21 +17,19 @@ import (
 // BuiltAgent is a stateless wiring + metadata bundle. Per-turn state lives in
 // the embedded Orchestrator; conversation history is the caller's concern.
 type BuiltAgent struct {
-	Orchestrator *orchestrator.Orchestrator
-	Manifest     manifest.Manifest
-	SystemPrompt string
-	ToolDefs     []llm.ToolDefinition
+	Orchestrator  *orchestrator.Orchestrator
+	Manifest      manifest.Manifest
+	SystemPrompt  string
+	ToolDefs      []llm.ToolDefinition
+	NormalizedSpec *spec.NormalizedSpec
 }
 
 // Build validates the spec, resolves every component through the registry,
 // composes chains, and materializes a *orchestrator.Orchestrator.
-func Build(ctx context.Context, s *spec.AgentSpec, r *registry.ComponentRegistry) (*BuiltAgent, error) {
-	if err := s.Validate(); err != nil {
-		return nil, err
-	}
+func Build(ctx context.Context, ns *spec.NormalizedSpec, r *registry.ComponentRegistry) (*BuiltAgent, error) {
 	r.Freeze()
 
-	res, err := resolve(ctx, s, r)
+	res, err := resolve(ctx, &ns.Spec, r)
 	if err != nil {
 		return nil, err
 	}
@@ -96,19 +94,34 @@ func Build(ctx context.Context, s *spec.AgentSpec, r *registry.ComponentRegistry
 	}
 
 	return &BuiltAgent{
-		Orchestrator: orch,
-		Manifest:     buildManifest(s, res),
-		SystemPrompt: res.systemPrompt,
-		ToolDefs:     toolDefs,
+		Orchestrator:  orch,
+		Manifest:      buildManifest(&ns.Spec, res, ns),
+		SystemPrompt:  res.systemPrompt,
+		ToolDefs:      toolDefs,
+		NormalizedSpec: ns,
 	}, nil
 }
 
-func buildManifest(s *spec.AgentSpec, res *resolved) manifest.Manifest {
+func buildManifest(s *spec.AgentSpec, res *resolved, ns *spec.NormalizedSpec) manifest.Manifest {
 	m := manifest.Manifest{
 		SpecID:      s.Metadata.ID,
 		SpecVersion: s.Metadata.Version,
 		BuiltAt:     time.Now().UTC(),
 	}
+
+	if len(ns.ExtendsChain) > 0 {
+		m.ExtendsChain = append([]string(nil), ns.ExtendsChain...)
+	}
+	if len(ns.Overlays) > 0 {
+		m.Overlays = make([]manifest.OverlayAttribution, 0, len(ns.Overlays))
+		for _, o := range ns.Overlays {
+			m.Overlays = append(m.Overlays, manifest.OverlayAttribution{
+				Name: o.Name,
+				File: o.File,
+			})
+		}
+	}
+
 	m.Resolved = append(m.Resolved, manifest.ResolvedComponent{
 		Kind:   string(registry.KindProvider),
 		ID:     string(res.providerID),

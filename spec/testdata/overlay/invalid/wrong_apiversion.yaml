@@ -1,0 +1,5 @@
+apiVersion: nope/v0
+kind: AgentOverlay
+metadata:
+  name: bad
+spec: {}
