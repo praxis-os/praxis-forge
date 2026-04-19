@@ -20,7 +20,7 @@ jobs:
       RELEASE_PLEASE_SIGNOFF: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
       TARGET_BRANCH: main
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
