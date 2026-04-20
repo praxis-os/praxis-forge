@@ -1,0 +1,1 @@
+{"apiVersion":"forge.praxis-os.dev/v0","kind":"AgentSpec","metadata":{"id":"stable.agent","labels":{"alpha":"1","beta":"2","gamma":"3"},"version":"1.0.0"},"prompt":{"system":{"ref":"prompt.system@1.0.0"}},"provider":{"config":{"maxTokens":4096,"model":"claude-opus","temperature":0},"ref":"provider@1.0.0"}}
