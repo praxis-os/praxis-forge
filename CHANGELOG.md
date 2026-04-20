@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.5.0](https://github.com/praxis-os/praxis-forge/compare/v0.3.0...v0.5.0) (2026-04-20)
+
+
+### Added
+
+* **build:** stamp NormalizedHash and Capabilities onto Manifest ([d4edfaa](https://github.com/praxis-os/praxis-forge/commit/d4edfaa5efadf9f0fb6dd32e358451233c5a2fa5))
+* **manifest:** NormalizedHash + Capabilities fields ([1e097c9](https://github.com/praxis-os/praxis-forge/commit/1e097c960e5516d5fbc073f680a6c056e63dade5))
+* **phase-2b:** canonical JSON, stable hash, capabilities ([d38f214](https://github.com/praxis-os/praxis-forge/commit/d38f214245c4b7e2c359174eaf9688efc111db53))
+* **spec:** add JSON tags to AgentSpec for canonical serialization ([2a1b505](https://github.com/praxis-os/praxis-forge/commit/2a1b505adb35c53b096f092dad30b58c171334a7))
+* **spec:** canonical JSON encoder for NormalizedSpec ([353bcdd](https://github.com/praxis-os/praxis-forge/commit/353bcdd24c757ee2fe6a87feafe7d6a7bc585b8d))
+* **spec:** stable SHA-256 hash accessor on NormalizedSpec ([e8fe7a2](https://github.com/praxis-os/praxis-forge/commit/e8fe7a2bfc4d3839d37384010850ac254b6c0c8a))
+
+
+### Documentation
+
+* Phase 2b design spec and forge-overview amendment ([9f692e6](https://github.com/praxis-os/praxis-forge/commit/9f692e6b1d7de7a371610a4e3419329f2d755275))
+
+
+### Testing
+
+* **spec:** determinism fixture with permuted map order ([384bd76](https://github.com/praxis-os/praxis-forge/commit/384bd76ac3ea3ea19f7179c7f22992d0d393cac9))
+
 ## [0.3.0](https://github.com/praxis-os/praxis-forge/compare/v0.1.0...v0.3.0) (2026-04-19)
 
 
