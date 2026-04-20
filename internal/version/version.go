@@ -6,6 +6,6 @@ package version
 
 // Version is the current praxis-forge module version.
 // x-release-please-start-version
-const Version = "0.1.0"
+const Version = "0.3.0"
 
 // x-release-please-end
