@@ -141,7 +141,9 @@ type NormalizedSpec struct {
 	ExtendsChain []string
 	Overlays     []OverlayAttribution
 
-	fields provenanceFields // unexported; access via NormalizedSpec.Provenance
+	fields        provenanceFields // unexported; access via NormalizedSpec.Provenance
+	canonicalMemo memoCanonical    // memoized canonical JSON; access via CanonicalJSON
+	hashMemo      memoHash         // memoized SHA-256 hash; access via NormalizedHash
 }
 
 // Provenance returns the source attribution for a top-level spec

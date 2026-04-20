@@ -54,6 +54,62 @@ func TestManifest_EmptyChainAndOverlaysOmitted(t *testing.T) {
 	}
 }
 
+func TestManifest_NormalizedHashAndCapabilities_RoundTrip(t *testing.T) {
+	m := Manifest{
+		SpecID:         "acme.demo",
+		SpecVersion:    "0.1.0",
+		BuiltAt:        time.Date(2026, 4, 20, 0, 0, 0, 0, time.UTC),
+		NormalizedHash: "84eb0a2e820c7a9676ead6611dde13493a0806d7f2def0594501441a4a3a5e8c",
+		Capabilities: Capabilities{
+			Present: []string{"prompt_asset", "provider"},
+			Skipped: []CapabilitySkip{
+				{Kind: "budget_profile", Reason: "not_specified"},
+				{Kind: "credential_resolver", Reason: "not_specified"},
+			},
+		},
+		Resolved: []ResolvedComponent{
+			{Kind: "provider", ID: "provider.fake@1.0.0"},
+		},
+	}
+	out, err := json.Marshal(m)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var got Manifest
+	if err := json.Unmarshal(out, &got); err != nil {
+		t.Fatal(err)
+	}
+	if got.NormalizedHash != m.NormalizedHash {
+		t.Errorf("NormalizedHash: want %q, got %q", m.NormalizedHash, got.NormalizedHash)
+	}
+	if len(got.Capabilities.Present) != 2 || got.Capabilities.Present[0] != "prompt_asset" {
+		t.Errorf("Capabilities.Present: %+v", got.Capabilities.Present)
+	}
+	if len(got.Capabilities.Skipped) != 2 || got.Capabilities.Skipped[0].Kind != "budget_profile" {
+		t.Errorf("Capabilities.Skipped: %+v", got.Capabilities.Skipped)
+	}
+}
+
+func TestManifest_CapabilitiesSkippedOmittedWhenEmpty(t *testing.T) {
+	m := Manifest{
+		SpecID:      "acme.demo",
+		SpecVersion: "0.1.0",
+		BuiltAt:     time.Date(2026, 4, 20, 0, 0, 0, 0, time.UTC),
+		Capabilities: Capabilities{
+			Present: []string{"prompt_asset", "provider"},
+		},
+		Resolved: []ResolvedComponent{{Kind: "provider", ID: "provider.fake@1.0.0"}},
+	}
+	out, err := json.Marshal(m)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(out), `"skipped"`) {
+		t.Errorf("skipped should be omitted when empty: %s", out)
+	}
+}
+
 func TestManifest_PopulatedRoundTrip(t *testing.T) {
 	m := Manifest{
 		SpecID:      "acme.demo",

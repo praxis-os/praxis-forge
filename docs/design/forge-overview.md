@@ -174,9 +174,12 @@ AgentSpec (yaml) ─▶ parse ─▶ validate ─▶ normalize ─▶ + overlays
     drift through extends or overlays). Manifest gains `extendsChain`
     and `overlays` attribution fields. See
     [`docs/superpowers/specs/2026-04-18-praxis-forge-phase-2a-design.md`](../superpowers/specs/2026-04-18-praxis-forge-phase-2a-design.md).
-  - **Phase 2b (next):** canonical JSON ordering of `NormalizedSpec`,
-    stable hash on `Manifest` (`normalizedHash`), richer inspection
-    surfaces (capability flags, dependency graph export).
+  - **Phase 2b (shipped):** canonical JSON ordering of `NormalizedSpec`
+    (map keys sorted lexicographically, empty collections normalized),
+    stable SHA-256 hash on `Manifest` (`normalizedHash`), capability
+    flags (`Manifest.Capabilities` with `Present`/`Skipped` kind lists).
+    Dependency-graph export deferred. See
+    [`docs/superpowers/specs/2026-04-20-praxis-forge-phase-2b-design.md`](../superpowers/specs/2026-04-20-praxis-forge-phase-2b-design.md).
 - **Phase 3 — skills.** Skill registry, expansion rules, prompt-fragment
   merge, dependency/conflict validation, output contracts.
 - **Phase 4 — MCP consume.** MCP imports, remote metadata normalization,

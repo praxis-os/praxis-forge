@@ -161,6 +161,98 @@ func checkFixtureSuccess(t *testing.T, scenario string, result *NormalizedSpec, 
 			t.Errorf("overlay[%d] name mismatch: want %q, got %q", i, wantOv.Name, result.Overlays[i].Name)
 		}
 	}
+
+	checkFixtureCanonical(t, scenario, result)
+}
+
+func checkFixtureCanonical(t *testing.T, scenario string, result *NormalizedSpec) {
+	t.Helper()
+	canonicalPath := filepath.Join("testdata", "normalize", scenario, "want.canonical.json")
+	if _, statErr := os.Stat(canonicalPath); statErr == nil {
+		wantCanonical, readErr := os.ReadFile(canonicalPath)
+		if readErr != nil {
+			t.Fatalf("failed to read want.canonical.json: %v", readErr)
+		}
+		gotCanonical, cErr := result.CanonicalJSON()
+		if cErr != nil {
+			t.Fatalf("CanonicalJSON: %v", cErr)
+		}
+		if string(wantCanonical) != string(gotCanonical) {
+			t.Errorf("canonical JSON mismatch:\nwant: %s\ngot:  %s", wantCanonical, gotCanonical)
+		}
+	}
+
+	hashPath := filepath.Join("testdata", "normalize", scenario, "want.hash")
+	if _, statErr := os.Stat(hashPath); statErr == nil {
+		wantHash, readErr := os.ReadFile(hashPath)
+		if readErr != nil {
+			t.Fatalf("failed to read want.hash: %v", readErr)
+		}
+		wantHashStr := string(wantHash)
+		if len(wantHashStr) > 0 && wantHashStr[len(wantHashStr)-1] == '\n' {
+			wantHashStr = wantHashStr[:len(wantHashStr)-1]
+		}
+		gotHash, hErr := result.NormalizedHash()
+		if hErr != nil {
+			t.Fatalf("NormalizedHash: %v", hErr)
+		}
+		if wantHashStr != gotHash {
+			t.Errorf("hash mismatch:\nwant: %s\ngot:  %s", wantHashStr, gotHash)
+		}
+	}
+}
+
+// TestNormalize_CanonicalStable verifies that two YAMLs differing only in map
+// key order produce identical CanonicalJSON bytes and NormalizedHash.
+func TestNormalize_CanonicalStable(t *testing.T) {
+	scenario := "canonical-stable"
+	baseDir := filepath.Join("testdata", "normalize", scenario)
+
+	loadBase := func(filename string) *AgentSpec {
+		s, err := LoadSpec(filepath.Join(baseDir, filename))
+		if err != nil {
+			t.Fatalf("LoadSpec(%s): %v", filename, err)
+		}
+		return s
+	}
+
+	ctx := context.Background()
+
+	nsA, err := Normalize(ctx, loadBase("base-a.yaml"), nil, nil)
+	if err != nil {
+		t.Fatalf("Normalize(base-a): %v", err)
+	}
+	nsB, err := Normalize(ctx, loadBase("base-b.yaml"), nil, nil)
+	if err != nil {
+		t.Fatalf("Normalize(base-b): %v", err)
+	}
+
+	cA, err := nsA.CanonicalJSON()
+	if err != nil {
+		t.Fatalf("CanonicalJSON(a): %v", err)
+	}
+	cB, err := nsB.CanonicalJSON()
+	if err != nil {
+		t.Fatalf("CanonicalJSON(b): %v", err)
+	}
+	if string(cA) != string(cB) {
+		t.Errorf("canonical JSON differs between base-a and base-b:\n  a: %s\n  b: %s", cA, cB)
+	}
+
+	hA, err := nsA.NormalizedHash()
+	if err != nil {
+		t.Fatalf("NormalizedHash(a): %v", err)
+	}
+	hB, err := nsB.NormalizedHash()
+	if err != nil {
+		t.Fatalf("NormalizedHash(b): %v", err)
+	}
+	if hA != hB {
+		t.Errorf("hash differs between base-a and base-b:\n  a: %s\n  b: %s", hA, hB)
+	}
+
+	// Also run base-a through the standard fixture check (want.json / want.canonical.json / want.hash).
+	checkFixtureSuccess(t, scenario, nsA, nil)
 }
 
 // compareSpec recursively compares two AgentSpec values.

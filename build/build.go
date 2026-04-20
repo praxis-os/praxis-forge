@@ -103,10 +103,13 @@ func Build(ctx context.Context, ns *spec.NormalizedSpec, r *registry.ComponentRe
 }
 
 func buildManifest(s *spec.AgentSpec, res *resolved, ns *spec.NormalizedSpec) manifest.Manifest {
+	hash, _ := ns.NormalizedHash() // error impossible: ns passed validation
 	m := manifest.Manifest{
-		SpecID:      s.Metadata.ID,
-		SpecVersion: s.Metadata.Version,
-		BuiltAt:     time.Now().UTC(),
+		SpecID:         s.Metadata.ID,
+		SpecVersion:    s.Metadata.Version,
+		BuiltAt:        time.Now().UTC(),
+		NormalizedHash: hash,
+		Capabilities:   computeCapabilities(s, res),
 	}
 
 	if len(ns.ExtendsChain) > 0 {

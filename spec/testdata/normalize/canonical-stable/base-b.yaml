@@ -1,0 +1,18 @@
+apiVersion: forge.praxis-os.dev/v0
+kind: AgentSpec
+metadata:
+  id: stable.agent
+  version: 1.0.0
+  labels:
+    gamma: "3"
+    alpha: "1"
+    beta: "2"
+provider:
+  ref: provider@1.0.0
+  config:
+    temperature: 0
+    model: claude-opus
+    maxTokens: 4096
+prompt:
+  system:
+    ref: prompt.system@1.0.0
