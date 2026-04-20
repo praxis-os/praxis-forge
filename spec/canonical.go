@@ -4,6 +4,8 @@ package spec
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -222,4 +224,31 @@ type memoCanonical struct {
 	once sync.Once
 	b    []byte
 	err  error
+}
+
+// memoHash holds the cached NormalizedHash string.
+type memoHash struct {
+	_    noCopy
+	once sync.Once
+	v    string
+	err  error
+}
+
+// NormalizedHash returns the lowercase hex-encoded SHA-256 of CanonicalJSON.
+// The value is memoized; repeated calls are free.
+//
+// The hash covers NormalizedSpec.Spec only. Manifest fields (BuiltAt,
+// Resolved, Capabilities) are not part of the input. Hash changes on
+// schema evolution are intentional: they signal that the logical spec changed.
+func (ns *NormalizedSpec) NormalizedHash() (string, error) {
+	ns.hashMemo.once.Do(func() {
+		b, err := ns.CanonicalJSON()
+		if err != nil {
+			ns.hashMemo.err = err
+			return
+		}
+		sum := sha256.Sum256(b)
+		ns.hashMemo.v = hex.EncodeToString(sum[:])
+	})
+	return ns.hashMemo.v, ns.hashMemo.err
 }

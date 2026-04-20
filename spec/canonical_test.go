@@ -3,7 +3,9 @@
 package spec_test
 
 import (
+	"encoding/hex"
 	"encoding/json"
+	"regexp"
 	"testing"
 
 	"github.com/praxis-os/praxis-forge/spec"
@@ -176,5 +178,117 @@ func TestCanonicalJSON_IsValidJSON(t *testing.T) {
 	}
 	if !json.Valid(b) {
 		t.Errorf("canonical output is not valid JSON: %s", b)
+	}
+}
+
+// TestNormalizedHash_Format verifies the hash is a 64-char lowercase hex string.
+func TestNormalizedHash_Format(t *testing.T) {
+	t.Parallel()
+
+	ns := mustNormalize(t, func() *spec.AgentSpec { s := baseSpec(); return &s }())
+	h, err := ns.NormalizedHash()
+	if err != nil {
+		t.Fatalf("NormalizedHash: %v", err)
+	}
+	if len(h) != 64 {
+		t.Errorf("expected 64-char hex, got len=%d: %s", len(h), h)
+	}
+	// Verify it is valid lowercase hex.
+	matched, _ := regexp.MatchString(`^[0-9a-f]{64}$`, h)
+	if !matched {
+		t.Errorf("hash is not lowercase hex: %s", h)
+	}
+	// Verify it decodes to 32 bytes (SHA-256).
+	decoded, err := hex.DecodeString(h)
+	if err != nil {
+		t.Fatalf("hex.DecodeString: %v", err)
+	}
+	if len(decoded) != 32 {
+		t.Errorf("expected 32 bytes, got %d", len(decoded))
+	}
+}
+
+// TestNormalizedHash_Stable verifies that the same spec always produces the same hash.
+func TestNormalizedHash_Stable(t *testing.T) {
+	t.Parallel()
+
+	s := baseSpec()
+	s.Metadata.Labels = map[string]string{"env": "prod", "region": "us-east"}
+
+	ns1 := mustNormalize(t, &s)
+	ns2 := mustNormalize(t, &s)
+
+	h1, err := ns1.NormalizedHash()
+	if err != nil {
+		t.Fatalf("hash1: %v", err)
+	}
+	h2, err := ns2.NormalizedHash()
+	if err != nil {
+		t.Fatalf("hash2: %v", err)
+	}
+	if h1 != h2 {
+		t.Errorf("same spec should produce same hash\n  h1: %s\n  h2: %s", h1, h2)
+	}
+}
+
+// TestNormalizedHash_DiffersOnSpecChange verifies different specs hash differently.
+func TestNormalizedHash_DiffersOnSpecChange(t *testing.T) {
+	t.Parallel()
+
+	s1 := baseSpec()
+	s2 := baseSpec()
+	s2.Metadata.Version = "2.0.0"
+
+	ns1 := mustNormalize(t, &s1)
+	ns2 := mustNormalize(t, &s2)
+
+	h1, err := ns1.NormalizedHash()
+	if err != nil {
+		t.Fatalf("hash1: %v", err)
+	}
+	h2, err := ns2.NormalizedHash()
+	if err != nil {
+		t.Fatalf("hash2: %v", err)
+	}
+	if h1 == h2 {
+		t.Errorf("different specs should not produce the same hash")
+	}
+}
+
+// TestNormalizedHash_MapOrderStable verifies that map key order does not affect hash.
+func TestNormalizedHash_MapOrderStable(t *testing.T) {
+	t.Parallel()
+
+	sA := baseSpec()
+	sA.Metadata.Labels = map[string]string{"alpha": "1", "beta": "2"}
+	sB := baseSpec()
+	sB.Metadata.Labels = map[string]string{"beta": "2", "alpha": "1"}
+
+	nsA := mustNormalize(t, &sA)
+	nsB := mustNormalize(t, &sB)
+
+	hA, err := nsA.NormalizedHash()
+	if err != nil {
+		t.Fatalf("hashA: %v", err)
+	}
+	hB, err := nsB.NormalizedHash()
+	if err != nil {
+		t.Fatalf("hashB: %v", err)
+	}
+	if hA != hB {
+		t.Errorf("map key order should not affect hash\n  hA: %s\n  hB: %s", hA, hB)
+	}
+}
+
+// TestNormalizedHash_Memoized verifies that repeated calls return the same value.
+func TestNormalizedHash_Memoized(t *testing.T) {
+	t.Parallel()
+
+	ns := mustNormalize(t, func() *spec.AgentSpec { s := baseSpec(); return &s }())
+
+	h1, _ := ns.NormalizedHash()
+	h2, _ := ns.NormalizedHash()
+	if h1 != h2 {
+		t.Errorf("expected same hash on repeated calls")
 	}
 }
