@@ -9,12 +9,14 @@ import "time"
 // is JSON-serializable so callers can persist it for audit, diff, and
 // inspection workflows.
 type Manifest struct {
-	SpecID       string               `json:"specId"`
-	SpecVersion  string               `json:"specVersion"`
-	BuiltAt      time.Time            `json:"builtAt"`
-	ExtendsChain []string             `json:"extendsChain,omitempty"`
-	Overlays     []OverlayAttribution `json:"overlays,omitempty"`
-	Resolved     []ResolvedComponent  `json:"resolved"`
+	SpecID         string               `json:"specId"`
+	SpecVersion    string               `json:"specVersion"`
+	BuiltAt        time.Time            `json:"builtAt"`
+	NormalizedHash string               `json:"normalizedHash"`
+	Capabilities   Capabilities         `json:"capabilities"`
+	ExtendsChain   []string             `json:"extendsChain,omitempty"`
+	Overlays       []OverlayAttribution `json:"overlays,omitempty"`
+	Resolved       []ResolvedComponent  `json:"resolved"`
 }
 
 // OverlayAttribution identifies one overlay that contributed to the
