@@ -5,6 +5,7 @@ package spec
 import (
 	"fmt"
 	"regexp"
+	"strings"
 )
 
 const (
@@ -19,7 +20,7 @@ var (
 
 // Validate runs every Phase 1 invariant in a fixed order, aggregating failures.
 //
-//nolint:gocyclo // linear list of Phase-1 invariants (header, refs, phase-gated fields, duplicates); splitting into helpers scatters the invariant set without reducing complexity.
+//nolint:gocyclo // linear list of Phase-1 invariants (header, refs, phase-gated fields, skills + outputContract prefix checks, duplicates); splitting into helpers scatters the invariant set without reducing complexity.
 func (s *AgentSpec) Validate() error {
 	var errs Errors
 
@@ -74,18 +75,22 @@ func (s *AgentSpec) Validate() error {
 		validateRef(&errs, "identity.ref", s.Identity.Ref)
 	}
 
-	// Phase-gated fields: must be empty in v0.
+	// Phase-gated fields: extends and mcpImports remain gated; skills + outputContract now validated by prefix.
 	if len(s.Extends) > 0 {
 		errs.Addf("extends: phase-gated (Phase 2); must be empty in v0")
-	}
-	if len(s.Skills) > 0 {
-		errs.Addf("skills: phase-gated (Phase 3); must be empty in v0")
 	}
 	if len(s.MCPImports) > 0 {
 		errs.Addf("mcpImports: phase-gated (Phase 4); must be empty in v0")
 	}
+
+	// Skills validation: each ref must be prefixed with "skill.".
+	for i, skill := range s.Skills {
+		validateKindPrefixedRef(&errs, fmt.Sprintf("skills[%d].ref", i), skill.Ref, "skill.")
+	}
+
+	// OutputContract validation: ref must be prefixed with "outputcontract.".
 	if s.OutputContract != nil {
-		errs.Addf("outputContract: phase-gated (Phase 3); must be empty in v0")
+		validateKindPrefixedRef(&errs, "outputContract.ref", s.OutputContract.Ref, "outputcontract.")
 	}
 
 	// Duplicate tool refs.
@@ -108,5 +113,19 @@ func validateRef(errs *Errors, field, ref string) {
 	}
 	if _, _, err := ParseID(ref); err != nil {
 		errs.Addf("%s: %s", field, err.Error())
+	}
+}
+
+func validateKindPrefixedRef(errs *Errors, field, ref, prefix string) {
+	if ref == "" {
+		errs.Addf("%s: required", field)
+		return
+	}
+	if _, _, err := ParseID(ref); err != nil {
+		errs.Addf("%s: %s", field, err.Error())
+		return
+	}
+	if !strings.HasPrefix(ref, prefix) {
+		errs.Addf("%s: must start with %q", field, prefix)
 	}
 }
