@@ -292,3 +292,54 @@ func TestNormalizedHash_Memoized(t *testing.T) {
 		t.Errorf("expected same hash on repeated calls")
 	}
 }
+
+func TestCanonicalConfigsEqual_SameContent(t *testing.T) {
+	a := map[string]any{"timeoutMs": 5000, "host": "example.com"}
+	b := map[string]any{"host": "example.com", "timeoutMs": 5000}
+	eq, err := spec.CanonicalConfigsEqual(a, b)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	if !eq {
+		t.Error("want equal (map key order should not matter)")
+	}
+}
+
+func TestCanonicalConfigsEqual_DifferentContent(t *testing.T) {
+	a := map[string]any{"timeoutMs": 5000}
+	b := map[string]any{"timeoutMs": 7000}
+	eq, err := spec.CanonicalConfigsEqual(a, b)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	if eq {
+		t.Error("want unequal")
+	}
+}
+
+func TestCanonicalConfigsEqual_NilVsEmpty(t *testing.T) {
+	// Per Phase 2b: empty maps and nil are canonically equivalent.
+	eq, err := spec.CanonicalConfigsEqual(nil, map[string]any{})
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	if !eq {
+		t.Error("want nil == empty map (Phase 2b pruneEmpty contract)")
+	}
+}
+
+func TestCanonicalConfigsEqual_NestedMaps(t *testing.T) {
+	a := map[string]any{
+		"headers": map[string]any{"User-Agent": "forge", "X-Trace": "abc"},
+	}
+	b := map[string]any{
+		"headers": map[string]any{"X-Trace": "abc", "User-Agent": "forge"},
+	}
+	eq, err := spec.CanonicalConfigsEqual(a, b)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	if !eq {
+		t.Error("want equal (nested map key order should not matter)")
+	}
+}
