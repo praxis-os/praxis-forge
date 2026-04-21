@@ -87,3 +87,17 @@ type IdentitySignerFactory interface {
 	Description() string
 	Build(ctx context.Context, cfg map[string]any) (identity.Signer, error)
 }
+
+// SkillFactory builds a Skill.
+type SkillFactory interface {
+	ID() ID
+	Description() string
+	Build(ctx context.Context, cfg map[string]any) (Skill, error)
+}
+
+// OutputContractFactory builds an OutputContract.
+type OutputContractFactory interface {
+	ID() ID
+	Description() string
+	Build(ctx context.Context, cfg map[string]any) (OutputContract, error)
+}

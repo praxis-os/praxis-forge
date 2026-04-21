@@ -25,6 +25,8 @@ type ComponentRegistry struct {
 	telemetryProfiles map[ID]TelemetryProfileFactory
 	credResolvers     map[ID]CredentialResolverFactory
 	identitySigners   map[ID]IdentitySignerFactory
+	skills            map[ID]SkillFactory
+	outputContracts   map[ID]OutputContractFactory
 }
 
 func NewComponentRegistry() *ComponentRegistry {
@@ -40,6 +42,8 @@ func NewComponentRegistry() *ComponentRegistry {
 		telemetryProfiles: map[ID]TelemetryProfileFactory{},
 		credResolvers:     map[ID]CredentialResolverFactory{},
 		identitySigners:   map[ID]IdentitySignerFactory{},
+		skills:            map[ID]SkillFactory{},
+		outputContracts:   map[ID]OutputContractFactory{},
 	}
 }
 
@@ -321,6 +325,56 @@ func (r *ComponentRegistry) IdentitySigner(id ID) (IdentitySignerFactory, error)
 	f, ok := r.identitySigners[id]
 	if !ok {
 		return nil, fmt.Errorf("%w: kind=%s id=%s", ErrNotFound, KindIdentitySigner, id)
+	}
+	return f, nil
+}
+
+// --- Skill ---
+
+func (r *ComponentRegistry) RegisterSkill(f SkillFactory) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.frozen {
+		return ErrRegistryFrozen
+	}
+	if _, exists := r.skills[f.ID()]; exists {
+		return fmt.Errorf("%w: kind=%s id=%s", ErrDuplicate, KindSkill, f.ID())
+	}
+	r.skills[f.ID()] = f
+	return nil
+}
+
+func (r *ComponentRegistry) Skill(id ID) (SkillFactory, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	f, ok := r.skills[id]
+	if !ok {
+		return nil, fmt.Errorf("%w: kind=%s id=%s", ErrNotFound, KindSkill, id)
+	}
+	return f, nil
+}
+
+// --- OutputContract ---
+
+func (r *ComponentRegistry) RegisterOutputContract(f OutputContractFactory) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.frozen {
+		return ErrRegistryFrozen
+	}
+	if _, exists := r.outputContracts[f.ID()]; exists {
+		return fmt.Errorf("%w: kind=%s id=%s", ErrDuplicate, KindOutputContract, f.ID())
+	}
+	r.outputContracts[f.ID()] = f
+	return nil
+}
+
+func (r *ComponentRegistry) OutputContract(id ID) (OutputContractFactory, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	f, ok := r.outputContracts[id]
+	if !ok {
+		return nil, fmt.Errorf("%w: kind=%s id=%s", ErrNotFound, KindOutputContract, id)
 	}
 	return f, nil
 }
