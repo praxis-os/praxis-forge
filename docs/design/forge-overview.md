@@ -180,8 +180,15 @@ AgentSpec (yaml) ─▶ parse ─▶ validate ─▶ normalize ─▶ + overlays
     flags (`Manifest.Capabilities` with `Present`/`Skipped` kind lists).
     Dependency-graph export deferred. See
     [`docs/superpowers/specs/2026-04-20-praxis-forge-phase-2b-design.md`](../superpowers/specs/2026-04-20-praxis-forge-phase-2b-design.md).
-- **Phase 3 — skills.** Skill registry, expansion rules, prompt-fragment
-  merge, dependency/conflict validation, output contracts.
+- **Phase 3 (shipped):** skill + output-contract registry kinds, skill
+  expansion with strict conflict detection (version divergence, config
+  divergence, multi-contract, user override, empty contribution),
+  prompt-fragment append with byte-identical dedupe,
+  `Manifest.ExpandedHash` alongside Phase 2b's `NormalizedHash`,
+  `ResolvedComponent.InjectedBySkill` attribution, two vertical-slice
+  factories (`skill.structured-output@1.0.0`,
+  `outputcontract.json-schema@1.0.0`). See
+  [`docs/superpowers/specs/2026-04-21-praxis-forge-phase-3-design.md`](../superpowers/specs/2026-04-21-praxis-forge-phase-3-design.md).
 - **Phase 4 — MCP consume.** MCP imports, remote metadata normalization,
   auth/trust metadata, allowlist/denylist, projection into forge tool
   namespace.
