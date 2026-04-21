@@ -4,7 +4,7 @@
 // program start and are resolved by (Kind, ID) from declarative specs.
 package registry
 
-// Kind enumerates every component category Phase 1 knows about.
+// Kind enumerates every component category Phase 1-3 knows about.
 type Kind string
 
 const (
@@ -19,4 +19,6 @@ const (
 	KindTelemetryProfile   Kind = "telemetry_profile"
 	KindCredentialResolver Kind = "credential_resolver"
 	KindIdentitySigner     Kind = "identity_signer"
+	KindSkill              Kind = "skill"
+	KindOutputContract     Kind = "output_contract"
 )

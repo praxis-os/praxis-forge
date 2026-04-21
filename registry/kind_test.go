@@ -22,3 +22,12 @@ func TestParseID_PropagatesSpecRules(t *testing.T) {
 		t.Fatalf("id=%s", id)
 	}
 }
+
+func TestKind_Phase3ActiveKinds(t *testing.T) {
+	if string(KindSkill) != "skill" {
+		t.Fatalf("KindSkill=%q, expected \"skill\"", KindSkill)
+	}
+	if string(KindOutputContract) != "output_contract" {
+		t.Fatalf("KindOutputContract=%q, expected \"output_contract\"", KindOutputContract)
+	}
+}
