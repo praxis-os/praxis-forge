@@ -20,9 +20,10 @@ import (
 // InjectedBy maps "kind:id" entries to the skill id that drove inclusion
 // (attribution rules: see design doc §"Manifest additions").
 type ExpandedSpec struct {
-	Spec       spec.AgentSpec
-	Skills     []ResolvedSkill
-	InjectedBy map[string]registry.ID
+	Spec                   spec.AgentSpec
+	Skills                 []ResolvedSkill
+	ResolvedOutputContract *ResolvedOutputContract
+	InjectedBy             map[string]registry.ID
 }
 
 // ResolvedSkill records a resolved skill factory's contribution for the
@@ -236,4 +237,34 @@ func injectOutputContract(out *ExpandedSpec, skillID registry.ID, rc registry.Re
 		)
 	}
 	return nil // idempotent.
+}
+
+// resolveOutputContract looks up the output-contract factory (if
+// es.Spec.OutputContract is set) and stamps the built value onto the
+// ExpandedSpec. No-op when the spec has no output contract. Called by
+// Build after expandSkills so the contract reflects any skill-driven
+// injection.
+func resolveOutputContract(
+	ctx context.Context,
+	es *ExpandedSpec,
+	r *registry.ComponentRegistry,
+) error {
+	if es.Spec.OutputContract == nil {
+		return nil
+	}
+	id := registry.ID(es.Spec.OutputContract.Ref)
+	fac, err := r.OutputContract(id)
+	if err != nil {
+		return fmt.Errorf("resolve outputContract: %w", err)
+	}
+	val, err := fac.Build(ctx, es.Spec.OutputContract.Config)
+	if err != nil {
+		return fmt.Errorf("build outputContract %s: %w", id, err)
+	}
+	es.ResolvedOutputContract = &ResolvedOutputContract{
+		ID:     id,
+		Config: es.Spec.OutputContract.Config,
+		Value:  val,
+	}
+	return nil
 }

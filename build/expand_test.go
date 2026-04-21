@@ -373,3 +373,118 @@ func TestExpandSkills_DeclarationOrderDeterministic(t *testing.T) {
 		t.Errorf("Tools[1] should come from skill.a, got %q", got.Spec.Tools[1].Ref)
 	}
 }
+
+// --- Part A: resolveOutputContract tests ---
+
+func TestResolveOutputContract_StampsValue(t *testing.T) {
+	s := baseSpec()
+	s.OutputContract = &spec.ComponentRef{
+		Ref:    "outputcontract.json@1.0.0",
+		Config: map[string]any{"schema": map[string]any{"type": "object"}},
+	}
+	es, err := expandSkills(context.Background(), s, registry.NewComponentRegistry())
+	if err != nil {
+		t.Fatalf("expandSkills: %v", err)
+	}
+
+	r := registry.NewComponentRegistry()
+	schema := map[string]any{"type": "object"}
+	if err := r.RegisterOutputContract(fakeOutputContract{
+		id: "outputcontract.json@1.0.0",
+		oc: registry.OutputContract{Schema: schema},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := resolveOutputContract(context.Background(), es, r); err != nil {
+		t.Fatalf("resolveOutputContract: %v", err)
+	}
+	if es.ResolvedOutputContract == nil {
+		t.Fatal("ResolvedOutputContract nil after resolve")
+	}
+	if es.ResolvedOutputContract.Value.Schema["type"] != "object" {
+		t.Errorf("Schema.type: %v", es.ResolvedOutputContract.Value.Schema["type"])
+	}
+}
+
+func TestResolveOutputContract_NilWhenAbsent(t *testing.T) {
+	s := baseSpec()
+	es, _ := expandSkills(context.Background(), s, registry.NewComponentRegistry())
+	if err := resolveOutputContract(context.Background(), es, registry.NewComponentRegistry()); err != nil {
+		t.Fatal(err)
+	}
+	if es.ResolvedOutputContract != nil {
+		t.Error("ResolvedOutputContract should remain nil when spec has no outputContract")
+	}
+}
+
+func TestResolveOutputContract_MissingFactory(t *testing.T) {
+	s := baseSpec()
+	s.OutputContract = &spec.ComponentRef{Ref: "outputcontract.missing@1.0.0"}
+	es, _ := expandSkills(context.Background(), s, registry.NewComponentRegistry())
+	err := resolveOutputContract(context.Background(), es, registry.NewComponentRegistry())
+	if err == nil {
+		t.Fatal("want ErrNotFound")
+	}
+	if !errors.Is(err, registry.ErrNotFound) {
+		t.Errorf("want wraps ErrNotFound, got: %v", err)
+	}
+}
+
+// --- Part B: Build integration tests ---
+
+func TestBuild_AppendsSkillPromptFragment(t *testing.T) {
+	s := baseSpec()
+	s.Skills = []spec.ComponentRef{{Ref: "skill.polite@1.0.0"}}
+
+	r := registry.NewComponentRegistry()
+	if err := r.RegisterProvider(minProvFac{id: "provider.min@1.0.0"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.RegisterPromptAsset(minPromptFac{id: "prompt.sys@1.0.0"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.RegisterSkill(fakeSkill{id: "skill.polite@1.0.0", s: registry.Skill{
+		PromptFragment: "Always be polite.",
+	}}); err != nil {
+		t.Fatal(err)
+	}
+
+	ns, err := spec.Normalize(context.Background(), s, nil, nil)
+	if err != nil {
+		t.Fatalf("Normalize: %v", err)
+	}
+	built, err := Build(context.Background(), ns, r)
+	if err != nil {
+		t.Fatalf("Build: %v", err)
+	}
+	want := "hi\n\nAlways be polite."
+	if built.SystemPrompt != want {
+		t.Errorf("SystemPrompt:\n  want: %q\n  got:  %q", want, built.SystemPrompt)
+	}
+}
+
+func TestBuild_DedupesIdenticalPromptFragments(t *testing.T) {
+	s := baseSpec()
+	s.Skills = []spec.ComponentRef{
+		{Ref: "skill.a@1.0.0"},
+		{Ref: "skill.b@1.0.0"},
+	}
+
+	r := registry.NewComponentRegistry()
+	_ = r.RegisterProvider(minProvFac{id: "provider.min@1.0.0"})
+	_ = r.RegisterPromptAsset(minPromptFac{id: "prompt.sys@1.0.0"})
+	_ = r.RegisterSkill(fakeSkill{id: "skill.a@1.0.0", s: registry.Skill{PromptFragment: "Be safe."}})
+	_ = r.RegisterSkill(fakeSkill{id: "skill.b@1.0.0", s: registry.Skill{PromptFragment: "Be safe."}})
+
+	ns, _ := spec.Normalize(context.Background(), s, nil, nil)
+	built, err := Build(context.Background(), ns, r)
+	if err != nil {
+		t.Fatalf("Build: %v", err)
+	}
+	want := "hi\n\nBe safe."
+	if built.SystemPrompt != want {
+		t.Errorf("SystemPrompt:\n  want: %q\n  got:  %q", want, built.SystemPrompt)
+	}
+}
+

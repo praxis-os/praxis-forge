@@ -133,18 +133,20 @@ func mergeChain(parents []*AgentSpec, base *AgentSpec, prov *provenanceFields) *
 	// overwrite when the layer contributes a non-zero value. Final
 	// provenance reflects the layer that won the field.
 	*prov = provenanceFields{
-		APIVersion:  Provenance{Role: RoleBase},
-		Kind:        Provenance{Role: RoleBase},
-		Metadata:    Provenance{Role: RoleBase},
-		Provider:    Provenance{Role: RoleBase},
-		Prompt:      Provenance{Role: RoleBase},
-		Tools:       Provenance{Role: RoleBase},
-		Policies:    Provenance{Role: RoleBase},
-		Filters:     Provenance{Role: RoleBase},
-		Budget:      Provenance{Role: RoleBase},
-		Telemetry:   Provenance{Role: RoleBase},
-		Credentials: Provenance{Role: RoleBase},
-		Identity:    Provenance{Role: RoleBase},
+		APIVersion:    Provenance{Role: RoleBase},
+		Kind:          Provenance{Role: RoleBase},
+		Metadata:      Provenance{Role: RoleBase},
+		Provider:      Provenance{Role: RoleBase},
+		Prompt:        Provenance{Role: RoleBase},
+		Tools:         Provenance{Role: RoleBase},
+		Policies:      Provenance{Role: RoleBase},
+		Filters:       Provenance{Role: RoleBase},
+		Budget:        Provenance{Role: RoleBase},
+		Telemetry:     Provenance{Role: RoleBase},
+		Credentials:   Provenance{Role: RoleBase},
+		Identity:      Provenance{Role: RoleBase},
+		Skills:        Provenance{Role: RoleBase},
+		OutputContract: Provenance{Role: RoleBase},
 	}
 
 	// Walk parents in root-first order, then fold base last. Each
@@ -241,9 +243,16 @@ func mergeOne(merged *AgentSpec, child *AgentSpec, p Provenance, prov *provenanc
 		prov.Identity = p
 	}
 
-	// Skills / MCPImports / OutputContract are phase-gated for Phase
-	// 2a; mergeOne deliberately ignores them so a future-phase parent
-	// fragment cannot smuggle them through extends.
+	// Phase 3: Skills and OutputContract are now preserved (previously
+	// phase-gated). MCPImports remains phase-gated for Phase 4.
+	if child.Skills != nil {
+		merged.Skills = child.Skills
+		prov.Skills = p
+	}
+	if child.OutputContract != nil {
+		merged.OutputContract = child.OutputContract
+		prov.OutputContract = p
+	}
 }
 
 // mergeMetadata folds child fields onto merged with child-wins per
