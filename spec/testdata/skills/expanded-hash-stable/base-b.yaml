@@ -1,0 +1,17 @@
+apiVersion: forge.praxis-os.dev/v0
+kind: AgentSpec
+metadata:
+  id: acme.skills.stable
+  version: 1.0.0
+provider:
+  ref: provider.min@1.0.0
+prompt:
+  system:
+    ref: prompt.sys@1.0.0
+outputContract:
+  ref: outputcontract.json-schema@1.0.0
+  config:
+    schema:
+      type: object
+skills:
+  - ref: skill.structured-output@1.0.0

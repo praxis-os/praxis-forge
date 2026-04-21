@@ -1,0 +1,21 @@
+apiVersion: forge.praxis-os.dev/v0
+kind: AgentSpec
+metadata:
+  id: acme.skills.idempotent
+  version: 0.1.0
+provider:
+  ref: provider.min@1.0.0
+prompt:
+  system:
+    ref: prompt.sys@1.0.0
+policies:
+  - ref: policypack.pii-redaction@1.0.0
+    config:
+      strictness: medium
+outputContract:
+  ref: outputcontract.json-schema@1.0.0
+  config:
+    schema:
+      type: string
+skills:
+  - ref: skill.structured-output@1.0.0
