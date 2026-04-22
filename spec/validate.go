@@ -84,6 +84,7 @@ func (s *AgentSpec) Validate() error {
 	for i, mi := range s.MCPImports {
 		validateKindPrefixedRef(&errs, fmt.Sprintf("mcpImports[%d].ref", i), mi.Ref, "mcp.")
 	}
+	validateMCPImportsStructure(&errs, s.MCPImports)
 
 	// Skills validation: each ref must be prefixed with "skill.".
 	for i, skill := range s.Skills {
