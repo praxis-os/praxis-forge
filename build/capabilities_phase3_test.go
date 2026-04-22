@@ -58,10 +58,10 @@ func TestCapabilities_SkippedWhenAbsent(t *testing.T) {
 
 	var gotSkill, gotContract bool
 	for _, s := range skipped {
-		if s.Kind == "skill" && s.Reason == "not_specified" {
+		if s.Kind == "skill" && s.Reason == notSpecified {
 			gotSkill = true
 		}
-		if s.Kind == "output_contract" && s.Reason == "not_specified" {
+		if s.Kind == "output_contract" && s.Reason == notSpecified {
 			gotContract = true
 		}
 	}
@@ -103,7 +103,7 @@ func TestComputeCapabilities_MCPPresentAndSkipped(t *testing.T) {
 	caps2 := computeCapabilities(s2, res2, &ExpandedSpec{Spec: *s2})
 	found := false
 	for _, sk := range caps2.Skipped {
-		if sk.Kind == "mcp_binding" && sk.Reason == "not_specified" {
+		if sk.Kind == "mcp_binding" && sk.Reason == notSpecified {
 			found = true
 		}
 	}

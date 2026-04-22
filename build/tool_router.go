@@ -14,9 +14,9 @@ import (
 )
 
 var (
-	ErrToolNameCollision    = errors.New("tool name collision across tool packs")
-	ErrToolNotFound         = errors.New("tool not found in router")
-	ErrToolNameReservedPrefix = errors.New("tool name uses reserved prefix mcp.")
+	ErrToolNameCollision      = errors.New("tool name collision across tool packs")
+	ErrToolNotFound           = errors.New("tool not found in router")
+	ErrToolNameReservedPrefix = errors.New("tool name uses reserved prefix mcp")
 )
 
 type toolRouter struct {
