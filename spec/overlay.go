@@ -96,9 +96,12 @@ type OverlayMeta struct {
 }
 
 // AgentOverlayBody mirrors AgentSpec but every field is optional and
-// each replaceable list uses the RefList tri-state wrapper. Phase-gated
-// AgentSpec fields (extends, skills, mcpImports, outputContract) are
-// deliberately absent so the strict decoder rejects them at parse time.
+// each replaceable list uses the RefList tri-state wrapper.
+// AgentSpec fields that overlays cannot modify today (extends, skills,
+// mcpImports, outputContract) are deliberately absent so the strict
+// decoder rejects them at parse time. Extends-chain propagation of
+// skills / outputContract / mcpImports still works via mergeChain;
+// overlay-file-level editing of these fields is a Phase 4.1+ concern.
 type AgentOverlayBody struct {
 	Metadata    *OverlayMetadata `yaml:"metadata,omitempty"`
 	Provider    *ComponentRef    `yaml:"provider,omitempty"`

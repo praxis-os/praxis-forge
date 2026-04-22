@@ -123,8 +123,9 @@ type provenanceFields struct {
 	Telemetry     Provenance
 	Credentials   Provenance
 	Identity      Provenance
-	Skills        Provenance
+	Skills         Provenance
 	OutputContract Provenance
+	MCPImports     Provenance
 }
 
 // NormalizedSpec is the canonical merge result of a base AgentSpec, its
