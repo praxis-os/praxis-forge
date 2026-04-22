@@ -388,6 +388,38 @@ func TestMCPBindingFactory_InterfaceSatisfied(t *testing.T) {
 	}
 }
 
+func TestRegistry_MCPBinding_RegisterLookupDuplicateFrozen(t *testing.T) {
+	r := NewComponentRegistry()
+
+	if err := r.RegisterMCPBinding(fakeMCPBindingFactory{id: "mcp.binding@1.0.0"}); err != nil {
+		t.Fatalf("RegisterMCPBinding: %v", err)
+	}
+
+	got, err := r.MCPBinding("mcp.binding@1.0.0")
+	if err != nil {
+		t.Fatalf("MCPBinding: %v", err)
+	}
+	if got.ID() != "mcp.binding@1.0.0" {
+		t.Fatalf("got.ID=%q", got.ID())
+	}
+
+	err = r.RegisterMCPBinding(fakeMCPBindingFactory{id: "mcp.binding@1.0.0"})
+	if !errors.Is(err, ErrDuplicate) {
+		t.Fatalf("want ErrDuplicate, got %v", err)
+	}
+
+	_, err = r.MCPBinding("mcp.missing@1.0.0")
+	if !errors.Is(err, ErrNotFound) {
+		t.Fatalf("want ErrNotFound, got %v", err)
+	}
+
+	r.Freeze()
+	err = r.RegisterMCPBinding(fakeMCPBindingFactory{id: "mcp.other@1.0.0"})
+	if !errors.Is(err, ErrRegistryFrozen) {
+		t.Fatalf("want ErrRegistryFrozen, got %v", err)
+	}
+}
+
 func TestMCPBindingType_ShapeSmoke(t *testing.T) {
 	b := MCPBinding{
 		ID: "fs",
