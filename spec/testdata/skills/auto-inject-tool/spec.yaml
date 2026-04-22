@@ -1,0 +1,26 @@
+apiVersion: forge.praxis-os.dev/v0
+kind: AgentSpec
+metadata:
+  id: acme.skills.autoinject-tool
+  version: 0.1.0
+provider:
+  ref: provider.min@1.0.0
+prompt:
+  system:
+    ref: prompt.sys@1.0.0
+tools:
+  - ref: toolpack.http-get@1.0.0
+    config:
+      allowedHosts:
+        - example.com
+policies:
+  - ref: policypack.pii-redaction@1.0.0
+    config:
+      strictness: medium
+outputContract:
+  ref: outputcontract.json-schema@1.0.0
+  config:
+    schema:
+      type: string
+skills:
+  - ref: skill.structured-output@1.0.0

@@ -1,0 +1,13 @@
+apiVersion: forge.praxis-os.dev/v0
+kind: AgentSpec
+metadata:
+  id: acme.skills.fragment-dedup
+  version: 0.1.0
+provider:
+  ref: provider.min@1.0.0
+prompt:
+  system:
+    ref: prompt.sys@1.0.0
+skills:
+  - ref: skill.safe-a@1.0.0
+  - ref: skill.safe-b@1.0.0

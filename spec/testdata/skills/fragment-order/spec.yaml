@@ -1,0 +1,13 @@
+apiVersion: forge.praxis-os.dev/v0
+kind: AgentSpec
+metadata:
+  id: acme.skills.fragment-order
+  version: 0.1.0
+provider:
+  ref: provider.min@1.0.0
+prompt:
+  system:
+    ref: prompt.sys@1.0.0
+skills:
+  - ref: skill.first@1.0.0
+  - ref: skill.second@1.0.0

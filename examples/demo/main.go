@@ -15,6 +15,7 @@ import (
 	"context"
 	"crypto/ed25519"
 	"crypto/rand"
+	"flag"
 	"fmt"
 	"log"
 	"log/slog"
@@ -29,9 +30,11 @@ import (
 	"github.com/praxis-os/praxis-forge/factories/filterpathescape"
 	"github.com/praxis-os/praxis-forge/factories/filtersecretscrubber"
 	"github.com/praxis-os/praxis-forge/factories/identitysignered25519"
+	"github.com/praxis-os/praxis-forge/factories/outputcontractjsonschema"
 	"github.com/praxis-os/praxis-forge/factories/policypackpiiredact"
 	"github.com/praxis-os/praxis-forge/factories/promptassetliteral"
 	"github.com/praxis-os/praxis-forge/factories/provideranthropic"
+	"github.com/praxis-os/praxis-forge/factories/skillstructuredoutput"
 	"github.com/praxis-os/praxis-forge/factories/telemetryprofileslog"
 	"github.com/praxis-os/praxis-forge/factories/toolpackhttpget"
 	"github.com/praxis-os/praxis-forge/registry"
@@ -45,9 +48,13 @@ func main() {
 	}
 	_, priv, _ := ed25519.GenerateKey(rand.Reader)
 
+	structured := flag.Bool("structured", false, "use the Phase-3 structured-output skill path")
+	flag.Parse()
+
 	r := registry.NewComponentRegistry()
 	must(r.RegisterProvider(provideranthropic.NewFactory("provider.anthropic@1.0.0", apiKey)))
 	must(r.RegisterPromptAsset(promptassetliteral.NewFactory("prompt.demo-system@1.0.0")))
+	must(r.RegisterPromptAsset(promptassetliteral.NewFactory("prompt.demo-structured-system@1.0.0")))
 	must(r.RegisterToolPack(toolpackhttpget.NewFactory("toolpack.http-get@1.0.0")))
 	must(r.RegisterPolicyPack(policypackpiiredact.NewFactory("policypack.pii-redaction@1.0.0")))
 	must(r.RegisterPreLLMFilter(filtersecretscrubber.NewFactory("filter.secret-scrubber@1.0.0")))
@@ -57,9 +64,17 @@ func main() {
 	must(r.RegisterTelemetryProfile(telemetryprofileslog.NewFactory("telemetryprofile.slog@1.0.0", slog.Default())))
 	must(r.RegisterCredentialResolver(credresolverenv.NewFactory("credresolver.env@1.0.0")))
 	must(r.RegisterIdentitySigner(identitysignered25519.NewFactory("identitysigner.ed25519@1.0.0", priv)))
+	if *structured {
+		must(r.RegisterSkill(skillstructuredoutput.NewFactory("skill.structured-output@1.0.0")))
+		must(r.RegisterOutputContract(outputcontractjsonschema.NewFactory("outputcontract.json-schema@1.0.0")))
+	}
 
 	ctx := context.Background()
-	s, err := forge.LoadSpec("examples/demo/agent.yaml")
+	specPath := "examples/demo/agent.yaml"
+	if *structured {
+		specPath = "examples/demo/agent-structured.yaml"
+	}
+	s, err := forge.LoadSpec(specPath)
 	if err != nil {
 		log.Fatalf("load spec: %v", err)
 	}
@@ -69,16 +84,19 @@ func main() {
 		log.Fatalf("build: %v", err)
 	}
 
-	url := "https://raw.githubusercontent.com/praxis-os/praxis-forge/main/README.md"
+	var prompt string
+	if *structured {
+		prompt = "Summarize the praxis-forge README in one paragraph (≤80 words). Respond with JSON {\"summary\": string, \"url\": string} matching the output schema."
+	} else {
+		url := "https://raw.githubusercontent.com/praxis-os/praxis-forge/main/README.md"
+		prompt = fmt.Sprintf("Fetch %s and summarize what praxis-forge does.", url)
+	}
 	res, err := b.Invoke(ctx, praxis.InvocationRequest{
 		Model:        "claude-sonnet-4-5",
 		SystemPrompt: b.SystemPrompt(),
 		Messages: []llm.Message{{
-			Role: llm.RoleUser,
-			Parts: []llm.MessagePart{{
-				Type: llm.PartTypeText,
-				Text: fmt.Sprintf("Fetch %s and summarize what praxis-forge does.", url),
-			}},
+			Role:  llm.RoleUser,
+			Parts: []llm.MessagePart{{Type: llm.PartTypeText, Text: prompt}},
 		}},
 	})
 	if err != nil {
@@ -93,6 +111,9 @@ func main() {
 		}
 	}
 	fmt.Printf("manifest components: %d\n", len(b.Manifest().Resolved))
+	if *structured {
+		fmt.Printf("expanded hash: %s\n", b.Manifest().ExpandedHash)
+	}
 }
 
 func must(err error) {

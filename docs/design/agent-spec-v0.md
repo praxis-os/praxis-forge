@@ -126,9 +126,13 @@ Locked fields (`apiVersion`, `kind`, `metadata.id`, `metadata.version`)
 cannot be touched by an overlay; attempting to do so produces
 `spec.ErrLockedFieldOverride` with attribution to the source overlay.
 
-Phase-gated AgentSpec fields (`extends`, `skills`, `mcpImports`,
-`outputContract`) are deliberately absent from the overlay body, so
-the strict YAML decoder rejects them at parse time.
+Overlay bodies omit phase-gated AgentSpec fields — `extends`,
+`skills`, `mcpImports`, `outputContract` — so the strict YAML decoder
+rejects them at parse time. For `skills` and `outputContract`
+(Phase 3 active), this is a deliberate scope choice: overlays never
+introduce Phase-3 composition; only the base spec or an extends
+parent can. The overlay phase-gate check therefore predates the
+spec-level phase unlocking and remains load-bearing.
 
 Overlay count is bounded by `spec.MaxOverlayCount` (16); exceeding the
 bound returns `spec.ErrCompositionLimit`.
@@ -155,8 +159,8 @@ Kinds in v0:
 | `credentials`    | `credential_resolver`   | `credentials.Resolver`                        |
 | `identity`       | `identity_signer`       | `identity.Signer`                             |
 
-Deferred kinds: `skill` (Phase 3), `mcp_binding` (Phase 4), `output_contract`
-(Phase 3, driven by skills).
+Active kinds added in Phase 3: `skill`, `output_contract`. Deferred
+kinds remaining: `mcp_binding` (Phase 4).
 
 ## Invariants
 
@@ -206,17 +210,12 @@ runs. No warnings — each failure aborts the build.
 
 ## Explicit deferrals
 
-- **Skills (Phase 3).** `skills:` is present in the schema but must be
-  empty in v0. A non-empty list fails validation with a
-  `skills_not_yet_supported` error.
 - **MCP imports (Phase 4).** `mcpImports:` same rule.
 - **Bundles / lockfiles (Phase 5).** No `bundle:` or `lockfile:` field
   in v0. These are repository-level artifacts, not spec fields.
 - **Expose-as-MCP.** Not a spec concern. It is a build-output concern
   that depends on a future praxis seam (see
   [`mismatches.md`](mismatches.md) Mismatch 4).
-- **Output contracts.** Declared only when a skill contributes one;
-  v0 without skills has no output contract field.
 
 ## File layout convention (proposed)
 

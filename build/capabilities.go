@@ -13,10 +13,12 @@ import (
 // computeCapabilities builds the manifest.Capabilities summary from the
 // resolved components and the normalized spec.
 //
-// Present lists every kind that contributed at least one resolved component,
-// sorted lexicographically. Skipped lists optional kinds whose spec field
-// was nil (not specified), in registry declaration order.
-func computeCapabilities(s *spec.AgentSpec, res *resolved) manifest.Capabilities {
+// Phase 3: Skill and OutputContract kinds are included. A skill kind
+// is "present" when spec.skills[] is non-empty; output_contract is
+// "present" when the effective OutputContract (user-declared or
+// skill-injected) is set on the expanded spec. Both kinds are "skipped"
+// with reason "not_specified" when absent.
+func computeCapabilities(s *spec.AgentSpec, res *resolved, expanded *ExpandedSpec) manifest.Capabilities {
 	var present []string
 	var skipped []manifest.CapabilitySkip
 
@@ -24,7 +26,6 @@ func computeCapabilities(s *spec.AgentSpec, res *resolved) manifest.Capabilities
 	present = append(present, string(registry.KindProvider))
 	present = append(present, string(registry.KindPromptAsset))
 
-	// Plural optional kinds: present when at least one resolved.
 	if len(res.toolPackIDs) > 0 {
 		present = append(present, string(registry.KindToolPack))
 	}
@@ -45,34 +46,37 @@ func computeCapabilities(s *spec.AgentSpec, res *resolved) manifest.Capabilities
 	if s.Budget != nil {
 		present = append(present, string(registry.KindBudgetProfile))
 	} else {
-		skipped = append(skipped, manifest.CapabilitySkip{
-			Kind:   string(registry.KindBudgetProfile),
-			Reason: "not_specified",
-		})
+		skipped = append(skipped, manifest.CapabilitySkip{Kind: string(registry.KindBudgetProfile), Reason: "not_specified"})
 	}
 	if s.Telemetry != nil {
 		present = append(present, string(registry.KindTelemetryProfile))
 	} else {
-		skipped = append(skipped, manifest.CapabilitySkip{
-			Kind:   string(registry.KindTelemetryProfile),
-			Reason: "not_specified",
-		})
+		skipped = append(skipped, manifest.CapabilitySkip{Kind: string(registry.KindTelemetryProfile), Reason: "not_specified"})
 	}
 	if s.Credentials != nil {
 		present = append(present, string(registry.KindCredentialResolver))
 	} else {
-		skipped = append(skipped, manifest.CapabilitySkip{
-			Kind:   string(registry.KindCredentialResolver),
-			Reason: "not_specified",
-		})
+		skipped = append(skipped, manifest.CapabilitySkip{Kind: string(registry.KindCredentialResolver), Reason: "not_specified"})
 	}
 	if s.Identity != nil {
 		present = append(present, string(registry.KindIdentitySigner))
 	} else {
-		skipped = append(skipped, manifest.CapabilitySkip{
-			Kind:   string(registry.KindIdentitySigner),
-			Reason: "not_specified",
-		})
+		skipped = append(skipped, manifest.CapabilitySkip{Kind: string(registry.KindIdentitySigner), Reason: "not_specified"})
+	}
+
+	// Phase 3: skills and output contract.
+	if len(s.Skills) > 0 {
+		present = append(present, string(registry.KindSkill))
+	} else {
+		skipped = append(skipped, manifest.CapabilitySkip{Kind: string(registry.KindSkill), Reason: "not_specified"})
+	}
+	// Effective output contract = user-declared OR skill-injected. The
+	// expanded spec holds the resolved truth.
+	hasContract := expanded != nil && expanded.Spec.OutputContract != nil
+	if hasContract {
+		present = append(present, string(registry.KindOutputContract))
+	} else {
+		skipped = append(skipped, manifest.CapabilitySkip{Kind: string(registry.KindOutputContract), Reason: "not_specified"})
 	}
 
 	sort.Strings(present)

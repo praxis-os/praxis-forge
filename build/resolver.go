@@ -59,6 +59,14 @@ type resolved struct {
 	identityID  registry.ID
 	identityCfg map[string]any
 
+	skills            []registry.Skill
+	skillIDs          []registry.ID
+	skillCfgs         []map[string]any
+
+	outputContract    *registry.OutputContract
+	outputContractID  registry.ID
+	outputContractCfg map[string]any
+
 	specSnapshot *spec.AgentSpec
 }
 

@@ -105,6 +105,22 @@ func (f fakeIdentitySignerFactory) Build(context.Context, map[string]any) (ident
 	return nil, nil
 }
 
+type fakeSkillFactory struct{ id ID }
+
+func (f fakeSkillFactory) ID() ID              { return f.id }
+func (f fakeSkillFactory) Description() string { return fakeDesc }
+func (f fakeSkillFactory) Build(context.Context, map[string]any) (Skill, error) {
+	return Skill{}, nil
+}
+
+type fakeOutputContractFactory struct{ id ID }
+
+func (f fakeOutputContractFactory) ID() ID              { return f.id }
+func (f fakeOutputContractFactory) Description() string { return fakeDesc }
+func (f fakeOutputContractFactory) Build(context.Context, map[string]any) (OutputContract, error) {
+	return OutputContract{}, nil
+}
+
 // --- Tests ---
 
 func TestRegistry_RegisterAndLookupProvider(t *testing.T) {
@@ -266,5 +282,93 @@ func TestRegistry_IdentitySigner(t *testing.T) {
 	got, err := r.IdentitySigner(f.id)
 	if err != nil || got.ID() != f.id {
 		t.Fatalf("got=%v err=%v", got, err)
+	}
+}
+
+// --- Skill tests ---
+
+func TestRegister_Skill_OK(t *testing.T) {
+	r := NewComponentRegistry()
+	f := fakeSkillFactory{id: "skill.fake@1.0.0"}
+	if err := r.RegisterSkill(f); err != nil {
+		t.Fatalf("RegisterSkill: %v", err)
+	}
+	got, err := r.Skill(f.id)
+	if err != nil {
+		t.Fatalf("Skill: %v", err)
+	}
+	if got.ID() != f.id {
+		t.Fatalf("got id=%s", got.ID())
+	}
+}
+
+func TestRegister_Skill_DuplicateFails(t *testing.T) {
+	r := NewComponentRegistry()
+	f := fakeSkillFactory{id: "skill.fake@1.0.0"}
+	_ = r.RegisterSkill(f)
+	err := r.RegisterSkill(f)
+	if !errors.Is(err, ErrDuplicate) {
+		t.Fatalf("err=%v", err)
+	}
+}
+
+func TestSkill_NotFound(t *testing.T) {
+	r := NewComponentRegistry()
+	_, err := r.Skill("skill.missing@1.0.0")
+	if !errors.Is(err, ErrNotFound) {
+		t.Fatalf("err=%v", err)
+	}
+}
+
+func TestRegister_Skill_FrozenRejects(t *testing.T) {
+	r := NewComponentRegistry()
+	r.Freeze()
+	err := r.RegisterSkill(fakeSkillFactory{id: "skill.a@1.0.0"})
+	if !errors.Is(err, ErrRegistryFrozen) {
+		t.Fatalf("err=%v", err)
+	}
+}
+
+// --- OutputContract tests ---
+
+func TestRegister_OutputContract_OK(t *testing.T) {
+	r := NewComponentRegistry()
+	f := fakeOutputContractFactory{id: "contract.fake@1.0.0"}
+	if err := r.RegisterOutputContract(f); err != nil {
+		t.Fatalf("RegisterOutputContract: %v", err)
+	}
+	got, err := r.OutputContract(f.id)
+	if err != nil {
+		t.Fatalf("OutputContract: %v", err)
+	}
+	if got.ID() != f.id {
+		t.Fatalf("got id=%s", got.ID())
+	}
+}
+
+func TestRegister_OutputContract_DuplicateFails(t *testing.T) {
+	r := NewComponentRegistry()
+	f := fakeOutputContractFactory{id: "contract.fake@1.0.0"}
+	_ = r.RegisterOutputContract(f)
+	err := r.RegisterOutputContract(f)
+	if !errors.Is(err, ErrDuplicate) {
+		t.Fatalf("err=%v", err)
+	}
+}
+
+func TestOutputContract_NotFound(t *testing.T) {
+	r := NewComponentRegistry()
+	_, err := r.OutputContract("contract.missing@1.0.0")
+	if !errors.Is(err, ErrNotFound) {
+		t.Fatalf("err=%v", err)
+	}
+}
+
+func TestRegister_OutputContract_FrozenRejects(t *testing.T) {
+	r := NewComponentRegistry()
+	r.Freeze()
+	err := r.RegisterOutputContract(fakeOutputContractFactory{id: "contract.a@1.0.0"})
+	if !errors.Is(err, ErrRegistryFrozen) {
+		t.Fatalf("err=%v", err)
 	}
 }

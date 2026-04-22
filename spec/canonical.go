@@ -252,3 +252,44 @@ func (ns *NormalizedSpec) NormalizedHash() (string, error) {
 	})
 	return ns.hashMemo.v, ns.hashMemo.err
 }
+
+// CanonicalConfigsEqual reports whether two ComponentRef-style config
+// maps encode to identical canonical JSON. Nil and empty collections
+// compare equal (per the Phase 2b pruneEmpty contract). Useful to
+// detect idempotent skill requirements during build-time expansion.
+func CanonicalConfigsEqual(a, b map[string]any) (bool, error) {
+	ab, err := canonicalizeConfig(a)
+	if err != nil {
+		return false, err
+	}
+	bb, err := canonicalizeConfig(b)
+	if err != nil {
+		return false, err
+	}
+	return bytes.Equal(ab, bb), nil
+}
+
+// canonicalizeConfig reuses the same pipeline as computeCanonicalJSON,
+// but scoped to a raw config map: marshal → unmarshal (UseNumber) → prune
+// empty → canonicalEncode.
+func canonicalizeConfig(cfg map[string]any) ([]byte, error) {
+	raw, err := json.Marshal(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("spec: canonical config marshal: %w", err)
+	}
+	dec := json.NewDecoder(bytes.NewReader(raw))
+	dec.UseNumber()
+	var tree any
+	if err := dec.Decode(&tree); err != nil {
+		return nil, fmt.Errorf("spec: canonical config decode: %w", err)
+	}
+	tree = pruneEmpty(tree)
+	if tree == nil {
+		return []byte("null"), nil
+	}
+	var buf bytes.Buffer
+	if err := canonicalEncode(&buf, tree); err != nil {
+		return nil, fmt.Errorf("spec: canonical config encode: %w", err)
+	}
+	return buf.Bytes(), nil
+}

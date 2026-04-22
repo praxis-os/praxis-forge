@@ -146,3 +146,86 @@ func TestManifest_PopulatedRoundTrip(t *testing.T) {
 		t.Errorf("File should round-trip empty (omitempty): %+v", got.Overlays[1])
 	}
 }
+
+func TestManifest_ExpandedHashRoundTrip(t *testing.T) {
+	m := Manifest{
+		SpecID:         "acme.demo",
+		SpecVersion:    "0.1.0",
+		BuiltAt:        time.Date(2026, 4, 21, 0, 0, 0, 0, time.UTC),
+		NormalizedHash: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		ExpandedHash:   "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+		Resolved: []ResolvedComponent{
+			{Kind: "provider", ID: "provider.fake@1.0.0"},
+		},
+	}
+	out, err := json.Marshal(m)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(out), `"expandedHash":"bbbb`) {
+		t.Errorf("expandedHash not present in JSON: %s", out)
+	}
+
+	var got Manifest
+	if err := json.Unmarshal(out, &got); err != nil {
+		t.Fatal(err)
+	}
+	if got.ExpandedHash != m.ExpandedHash {
+		t.Errorf("ExpandedHash: want %q, got %q", m.ExpandedHash, got.ExpandedHash)
+	}
+}
+
+func TestManifest_ExpandedHashOmittedWhenEmpty(t *testing.T) {
+	m := Manifest{
+		SpecID:         "acme.demo",
+		SpecVersion:    "0.1.0",
+		BuiltAt:        time.Date(2026, 4, 21, 0, 0, 0, 0, time.UTC),
+		NormalizedHash: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		// ExpandedHash intentionally empty
+		Resolved: []ResolvedComponent{{Kind: "provider", ID: "provider.fake@1.0.0"}},
+	}
+	out, err := json.Marshal(m)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(out), "expandedHash") {
+		t.Errorf("expandedHash should be omitted when empty: %s", out)
+	}
+}
+
+func TestResolvedComponent_InjectedBySkillRoundTrip(t *testing.T) {
+	rc := ResolvedComponent{
+		Kind:            "tool_pack",
+		ID:              "toolpack.http-get@1.0.0",
+		InjectedBySkill: "skill.structured-output@1.0.0",
+	}
+	out, err := json.Marshal(rc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(out), `"injectedBySkill":"skill.structured-output@1.0.0"`) {
+		t.Errorf("injectedBySkill missing: %s", out)
+	}
+
+	var got ResolvedComponent
+	if err := json.Unmarshal(out, &got); err != nil {
+		t.Fatal(err)
+	}
+	if got.InjectedBySkill != rc.InjectedBySkill {
+		t.Errorf("InjectedBySkill: want %q, got %q", rc.InjectedBySkill, got.InjectedBySkill)
+	}
+}
+
+func TestResolvedComponent_InjectedBySkillOmittedWhenEmpty(t *testing.T) {
+	rc := ResolvedComponent{
+		Kind: "provider",
+		ID:   "provider.fake@1.0.0",
+	}
+	out, err := json.Marshal(rc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(out), "injectedBySkill") {
+		t.Errorf("injectedBySkill should be omitted when empty: %s", out)
+	}
+}

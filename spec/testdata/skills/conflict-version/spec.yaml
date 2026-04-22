@@ -1,0 +1,17 @@
+apiVersion: forge.praxis-os.dev/v0
+kind: AgentSpec
+metadata:
+  id: acme.skills.conflict-version
+  version: 0.1.0
+provider:
+  ref: provider.min@1.0.0
+prompt:
+  system:
+    ref: prompt.sys@1.0.0
+tools:
+  - ref: toolpack.http-get@1.0.0
+    config:
+      allowedHosts:
+        - example.com
+skills:
+  - ref: skill.needs-http2@1.0.0

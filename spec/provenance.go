@@ -111,18 +111,20 @@ const (
 // Provenance per field. Nested collections share their parent field's
 // provenance (per-element provenance is out of scope for Phase 2a).
 type provenanceFields struct {
-	APIVersion  Provenance
-	Kind        Provenance
-	Metadata    Provenance
-	Provider    Provenance
-	Prompt      Provenance
-	Tools       Provenance
-	Policies    Provenance
-	Filters     Provenance
-	Budget      Provenance
-	Telemetry   Provenance
-	Credentials Provenance
-	Identity    Provenance
+	APIVersion    Provenance
+	Kind          Provenance
+	Metadata      Provenance
+	Provider      Provenance
+	Prompt        Provenance
+	Tools         Provenance
+	Policies      Provenance
+	Filters       Provenance
+	Budget        Provenance
+	Telemetry     Provenance
+	Credentials   Provenance
+	Identity      Provenance
+	Skills        Provenance
+	OutputContract Provenance
 }
 
 // NormalizedSpec is the canonical merge result of a base AgentSpec, its

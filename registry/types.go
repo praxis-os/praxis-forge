@@ -65,3 +65,39 @@ type TelemetryProfile struct {
 	Emitter  telemetry.LifecycleEventEmitter
 	Enricher telemetry.AttributeEnricher
 }
+
+// RequiredComponent represents a required dependency with optional configuration.
+type RequiredComponent struct {
+	ID     ID
+	Config map[string]interface{}
+}
+
+// SkillDescriptor is forge-managed metadata for a skill.
+type SkillDescriptor struct {
+	Name    string
+	Owner   string
+	Summary string
+	Tags    []string
+}
+
+// Skill is what a SkillFactory produces.
+type Skill struct {
+	PromptFragment         string
+	RequiredTools          []RequiredComponent
+	RequiredPolicies       []RequiredComponent
+	RequiredOutputContract *RequiredComponent
+	Descriptor             SkillDescriptor
+}
+
+// OutputContractDescriptor is forge-managed metadata for an output contract.
+type OutputContractDescriptor struct {
+	Name    string
+	Owner   string
+	Summary string
+}
+
+// OutputContract is what an OutputContractFactory produces.
+type OutputContract struct {
+	Schema     map[string]interface{}
+	Descriptor OutputContractDescriptor
+}

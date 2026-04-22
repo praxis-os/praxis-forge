@@ -27,13 +27,17 @@ and materializes a reproducible `BuiltAgent` backed by a configured
 
 ## Status
 
-**Phase 1 — minimum vertical slice.** Spec loader, typed
-`ComponentRegistry`, 11 factory kinds, composition adapters, and
-materialization into a real `*orchestrator.Orchestrator`. 11 concrete
-factories ship alongside the kernel wiring; see
-[`docs/superpowers/specs/`](docs/superpowers/specs/) for the design
-spec and [`docs/superpowers/plans/`](docs/superpowers/plans/) for the
-task-by-task implementation plan.
+**Phase 3 — skills and output contracts.** Adds `KindSkill` and
+`KindOutputContract` to the registry, unlocks `spec.skills[]` and
+`spec.outputContract`, and introduces a skill-expansion build stage
+with strict conflict detection, prompt-fragment append, and a
+post-expansion `Manifest.ExpandedHash`. 13 factory kinds + two new
+vertical-slice factories. Phase 2a composition depth (extends chains,
+overlays, provenance) and Phase 2b determinism (canonical JSON +
+stable hash + capabilities) both in place. See
+[`docs/superpowers/specs/`](docs/superpowers/specs/) for design docs
+and [`docs/superpowers/plans/`](docs/superpowers/plans/) for
+task-by-task implementation plans.
 
 Phase 0 architecture docs remain authoritative:
 

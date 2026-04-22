@@ -26,13 +26,42 @@ type BuiltAgent struct {
 
 // Build validates the spec, resolves every component through the registry,
 // composes chains, and materializes a *orchestrator.Orchestrator.
+//nolint:gocyclo
 func Build(ctx context.Context, ns *spec.NormalizedSpec, r *registry.ComponentRegistry) (*BuiltAgent, error) {
 	r.Freeze()
 
-	res, err := resolve(ctx, &ns.Spec, r)
+	expanded, err := expandSkills(ctx, &ns.Spec, r)
 	if err != nil {
 		return nil, err
 	}
+	if err := resolveOutputContract(ctx, expanded, r); err != nil {
+		return nil, err
+	}
+
+	res, err := resolve(ctx, &expanded.Spec, r)
+	if err != nil {
+		return nil, err
+	}
+	// Stamp expansion artefacts on res so buildManifest can attribute them.
+	res.skills = make([]registry.Skill, 0, len(expanded.Skills))
+	res.skillIDs = make([]registry.ID, 0, len(expanded.Skills))
+	res.skillCfgs = make([]map[string]any, 0, len(expanded.Skills))
+	for _, rs := range expanded.Skills {
+		res.skills = append(res.skills, rs.Value)
+		res.skillIDs = append(res.skillIDs, rs.ID)
+		res.skillCfgs = append(res.skillCfgs, rs.Config)
+	}
+	if expanded.ResolvedOutputContract != nil {
+		oc := expanded.ResolvedOutputContract.Value
+		res.outputContract = &oc
+		res.outputContractID = expanded.ResolvedOutputContract.ID
+		res.outputContractCfg = expanded.ResolvedOutputContract.Config
+	}
+
+	// Append skill prompt fragments to the base system prompt (design
+	// §"Prompt fragment merge"): declaration order, "\n\n" separator,
+	// byte-identical dedupe.
+	res.systemPrompt = appendSkillFragments(res.systemPrompt, expanded.Skills)
 
 	var opts []orchestrator.Option
 	var toolDefs []llm.ToolDefinition
@@ -95,21 +124,49 @@ func Build(ctx context.Context, ns *spec.NormalizedSpec, r *registry.ComponentRe
 
 	return &BuiltAgent{
 		Orchestrator:   orch,
-		Manifest:       buildManifest(&ns.Spec, res, ns),
+		Manifest:       buildManifest(&ns.Spec, res, ns, expanded),
 		SystemPrompt:   res.systemPrompt,
 		ToolDefs:       toolDefs,
 		NormalizedSpec: ns,
 	}, nil
 }
 
-func buildManifest(s *spec.AgentSpec, res *resolved, ns *spec.NormalizedSpec) manifest.Manifest {
+// appendSkillFragments appends each skill's PromptFragment to base.
+// Order: skills[] declaration order. Separator: "\n\n". Byte-identical
+// fragments deduplicate silently (audit still shows each contributing
+// skill in the manifest Resolved list).
+func appendSkillFragments(base string, skills []ResolvedSkill) string {
+	if len(skills) == 0 {
+		return base
+	}
+	seen := map[string]bool{}
+	out := base
+	for _, rs := range skills {
+		frag := rs.Value.PromptFragment
+		if frag == "" {
+			continue
+		}
+		if seen[frag] {
+			continue
+		}
+		seen[frag] = true
+		if out != "" {
+			out += "\n\n"
+		}
+		out += frag
+	}
+	return out
+}
+
+//nolint:gocyclo
+func buildManifest(s *spec.AgentSpec, res *resolved, ns *spec.NormalizedSpec, expanded *ExpandedSpec) manifest.Manifest {
 	hash, _ := ns.NormalizedHash() // error impossible: ns passed validation
 	m := manifest.Manifest{
 		SpecID:         s.Metadata.ID,
 		SpecVersion:    s.Metadata.Version,
 		BuiltAt:        time.Now().UTC(),
 		NormalizedHash: hash,
-		Capabilities:   computeCapabilities(s, res),
+		Capabilities:   computeCapabilities(s, res, expanded),
 	}
 
 	if len(ns.ExtendsChain) > 0 {
@@ -125,6 +182,12 @@ func buildManifest(s *spec.AgentSpec, res *resolved, ns *spec.NormalizedSpec) ma
 		}
 	}
 
+	// Phase 3: expanded hash emitted only when skills[] was non-empty.
+	if len(s.Skills) > 0 {
+		eh, _ := computeExpandedHash(expanded)
+		m.ExpandedHash = eh
+	}
+
 	m.Resolved = append(m.Resolved, manifest.ResolvedComponent{
 		Kind:   string(registry.KindProvider),
 		ID:     string(res.providerID),
@@ -136,16 +199,18 @@ func buildManifest(s *spec.AgentSpec, res *resolved, ns *spec.NormalizedSpec) ma
 	})
 	for i, id := range res.toolPackIDs {
 		m.Resolved = append(m.Resolved, manifest.ResolvedComponent{
-			Kind:   string(registry.KindToolPack),
-			ID:     string(id),
-			Config: res.toolPackCfgs[i],
+			Kind:            string(registry.KindToolPack),
+			ID:              string(id),
+			Config:          res.toolPackCfgs[i],
+			InjectedBySkill: lookupInjector(expanded, "tool_pack", string(id)),
 		})
 	}
 	for i, id := range res.policyHookIDs {
 		m.Resolved = append(m.Resolved, manifest.ResolvedComponent{
-			Kind:   string(registry.KindPolicyPack),
-			ID:     string(id),
-			Config: res.policyHookCfgs[i],
+			Kind:            string(registry.KindPolicyPack),
+			ID:              string(id),
+			Config:          res.policyHookCfgs[i],
+			InjectedBySkill: lookupInjector(expanded, "policy_pack", string(id)),
 		})
 	}
 	for i, id := range res.preLLMIDs {
@@ -183,5 +248,35 @@ func buildManifest(s *spec.AgentSpec, res *resolved, ns *spec.NormalizedSpec) ma
 			Kind: string(registry.KindIdentitySigner), ID: string(res.identityID), Config: res.identityCfg,
 		})
 	}
+	// Skills and output contract (Phase 3).
+	for i, id := range res.skillIDs {
+		desc := res.skills[i].Descriptor
+		m.Resolved = append(m.Resolved, manifest.ResolvedComponent{
+			Kind:        string(registry.KindSkill),
+			ID:          string(id),
+			Config:      res.skillCfgs[i],
+			Descriptors: desc,
+		})
+	}
+	if res.outputContract != nil {
+		desc := res.outputContract.Descriptor
+		m.Resolved = append(m.Resolved, manifest.ResolvedComponent{
+			Kind:            string(registry.KindOutputContract),
+			ID:              string(res.outputContractID),
+			Config:          res.outputContractCfg,
+			Descriptors:     desc,
+			InjectedBySkill: lookupInjector(expanded, "output_contract", string(res.outputContractID)),
+		})
+	}
 	return m
+}
+
+// lookupInjector returns the skill id that drove inclusion of a
+// specific (kindLabel, id) pair, or empty string if the component was
+// user-declared or there was no expansion.
+func lookupInjector(expanded *ExpandedSpec, kindLabel, id string) string {
+	if expanded == nil || expanded.InjectedBy == nil {
+		return ""
+	}
+	return string(expanded.InjectedBy[kindLabel+":"+id])
 }

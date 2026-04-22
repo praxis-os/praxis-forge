@@ -13,6 +13,10 @@ type Manifest struct {
 	SpecVersion    string               `json:"specVersion"`
 	BuiltAt        time.Time            `json:"builtAt"`
 	NormalizedHash string               `json:"normalizedHash"`
+	// ExpandedHash is the SHA-256 of the canonical JSON of the
+	// post-skill-expansion AgentSpec. Emitted when spec.skills[] was
+	// non-empty (Phase 3). Omitted when no skill expansion ran.
+	ExpandedHash   string               `json:"expandedHash,omitempty"`
 	Capabilities   Capabilities         `json:"capabilities"`
 	ExtendsChain   []string             `json:"extendsChain,omitempty"`
 	Overlays       []OverlayAttribution `json:"overlays,omitempty"`
@@ -32,4 +36,8 @@ type ResolvedComponent struct {
 	ID          string         `json:"id"`
 	Config      map[string]any `json:"config,omitempty"`
 	Descriptors any            `json:"descriptors,omitempty"`
+	// InjectedBySkill is the skill id that drove inclusion of this
+	// component via Phase 3 expansion. Empty for user-declared or
+	// for the skills themselves (Kind == "skill").
+	InjectedBySkill string `json:"injectedBySkill,omitempty"`
 }

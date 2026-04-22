@@ -89,10 +89,54 @@ func TestValidate_RejectsExtends(t *testing.T) {
 	}
 }
 
-func TestValidate_RejectsSkills(t *testing.T) {
+func TestValidate_AcceptsSkills(t *testing.T) {
 	s := baseValidSpec()
-	s.Skills = []ComponentRef{{Ref: "skill.foo@1.0.0"}}
-	if err := s.Validate(); err == nil || !strings.Contains(err.Error(), "skills") {
+	s.Skills = []ComponentRef{{Ref: "skill.structured-output@1.0.0"}}
+	if err := s.Validate(); err != nil {
+		t.Fatalf("unexpected err: %v", err)
+	}
+}
+
+func TestValidate_RejectsSkillWrongPrefix(t *testing.T) {
+	s := baseValidSpec()
+	s.Skills = []ComponentRef{{Ref: "toolpack.http-get@1.0.0"}}
+	err := s.Validate()
+	if err == nil || !strings.Contains(err.Error(), "skill.") || !strings.Contains(err.Error(), "must start with") {
+		t.Fatalf("err=%v", err)
+	}
+}
+
+func TestValidate_RejectsSkillEmptyRef(t *testing.T) {
+	s := baseValidSpec()
+	s.Skills = []ComponentRef{{Ref: ""}}
+	err := s.Validate()
+	if err == nil || !strings.Contains(err.Error(), "skills[0].ref") || !strings.Contains(err.Error(), "required") {
+		t.Fatalf("err=%v", err)
+	}
+}
+
+func TestValidate_AcceptsOutputContract(t *testing.T) {
+	s := baseValidSpec()
+	s.OutputContract = &ComponentRef{Ref: "outputcontract.json-schema@1.0.0"}
+	if err := s.Validate(); err != nil {
+		t.Fatalf("unexpected err: %v", err)
+	}
+}
+
+func TestValidate_RejectsOutputContractWrongPrefix(t *testing.T) {
+	s := baseValidSpec()
+	s.OutputContract = &ComponentRef{Ref: "contract.foo@1.0.0"}
+	err := s.Validate()
+	if err == nil || !strings.Contains(err.Error(), "outputcontract.") || !strings.Contains(err.Error(), "must start with") {
+		t.Fatalf("err=%v", err)
+	}
+}
+
+func TestValidate_RejectsOutputContractEmptyRef(t *testing.T) {
+	s := baseValidSpec()
+	s.OutputContract = &ComponentRef{Ref: ""}
+	err := s.Validate()
+	if err == nil || !strings.Contains(err.Error(), "outputContract.ref") || !strings.Contains(err.Error(), "required") {
 		t.Fatalf("err=%v", err)
 	}
 }
@@ -101,14 +145,6 @@ func TestValidate_RejectsMCP(t *testing.T) {
 	s := baseValidSpec()
 	s.MCPImports = []ComponentRef{{Ref: "mcp.foo@1.0.0"}}
 	if err := s.Validate(); err == nil || !strings.Contains(err.Error(), "mcpImports") {
-		t.Fatalf("err=%v", err)
-	}
-}
-
-func TestValidate_RejectsOutputContract(t *testing.T) {
-	s := baseValidSpec()
-	s.OutputContract = &ComponentRef{Ref: "contract.foo@1.0.0"}
-	if err := s.Validate(); err == nil || !strings.Contains(err.Error(), "outputContract") {
 		t.Fatalf("err=%v", err)
 	}
 }
