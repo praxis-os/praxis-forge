@@ -372,3 +372,24 @@ func TestRegister_OutputContract_FrozenRejects(t *testing.T) {
 		t.Fatalf("err=%v", err)
 	}
 }
+
+func TestMCPBindingType_ShapeSmoke(t *testing.T) {
+	b := MCPBinding{
+		ID: "fs",
+		Connection: MCPConnection{
+			Transport: MCPTransportStdio,
+			Command:   []string{"/bin/true"},
+		},
+		Allow:     []string{"read_*"},
+		Deny:      []string{"write_*"},
+		Policies:  []ID{"policypack.pii-redaction@1.0.0"},
+		Trust:     MCPTrust{Tier: "medium", Owner: "demo"},
+		OnNewTool: OnNewToolBlock,
+	}
+	if b.Connection.Transport != "stdio" {
+		t.Fatalf("Transport=%q", b.Connection.Transport)
+	}
+	if b.OnNewTool != "block" {
+		t.Fatalf("OnNewTool=%q", b.OnNewTool)
+	}
+}
