@@ -141,11 +141,32 @@ func TestValidate_RejectsOutputContractEmptyRef(t *testing.T) {
 	}
 }
 
-func TestValidate_RejectsMCP(t *testing.T) {
+func TestValidate_MCPImports_GateRemoved(t *testing.T) {
 	s := baseValidSpec()
-	s.MCPImports = []ComponentRef{{Ref: "mcp.foo@1.0.0"}}
-	if err := s.Validate(); err == nil || !strings.Contains(err.Error(), "mcpImports") {
-		t.Fatalf("err=%v", err)
+	s.MCPImports = []ComponentRef{
+		{Ref: "mcp.binding@1.0.0", Config: map[string]any{
+			"id":         "fs",
+			"connection": map[string]any{"transport": "stdio", "command": []any{"/bin/true"}},
+			"trust":      map[string]any{"tier": "low", "owner": "demo"},
+		}},
+	}
+	if err := s.Validate(); err != nil {
+		t.Fatalf("Validate: %v", err)
+	}
+}
+
+func TestValidate_MCPImports_BadRefPrefix(t *testing.T) {
+	s := baseValidSpec()
+	s.MCPImports = []ComponentRef{
+		{Ref: "toolpack.foo@1.0.0", Config: map[string]any{
+			"id":         "fs",
+			"connection": map[string]any{"transport": "stdio", "command": []any{"/bin/true"}},
+			"trust":      map[string]any{"tier": "low", "owner": "demo"},
+		}},
+	}
+	err := s.Validate()
+	if err == nil || !strings.Contains(err.Error(), "must start with \"mcp.\"") {
+		t.Fatalf("want mcp. prefix error, got %v", err)
 	}
 }
 
