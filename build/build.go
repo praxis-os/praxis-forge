@@ -26,6 +26,7 @@ type BuiltAgent struct {
 
 // Build validates the spec, resolves every component through the registry,
 // composes chains, and materializes a *orchestrator.Orchestrator.
+//nolint:gocyclo
 func Build(ctx context.Context, ns *spec.NormalizedSpec, r *registry.ComponentRegistry) (*BuiltAgent, error) {
 	r.Freeze()
 
@@ -157,6 +158,7 @@ func appendSkillFragments(base string, skills []ResolvedSkill) string {
 	return out
 }
 
+//nolint:gocyclo
 func buildManifest(s *spec.AgentSpec, res *resolved, ns *spec.NormalizedSpec, expanded *ExpandedSpec) manifest.Manifest {
 	hash, _ := ns.NormalizedHash() // error impossible: ns passed validation
 	m := manifest.Manifest{

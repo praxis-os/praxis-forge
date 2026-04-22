@@ -49,7 +49,9 @@ func TestComputeExpandedHash_Stable(t *testing.T) {
 		}
 		return h
 	}
-	if build() != build() {
+	h1 := build()
+	h2 := build()
+	if h1 != h2 {
 		t.Error("expanded hash not stable across two computations")
 	}
 }

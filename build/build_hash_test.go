@@ -16,6 +16,8 @@ import (
 
 var hexRE = regexp.MustCompile(`^[0-9a-f]{64}$`)
 
+const notSpecified = "not_specified"
+
 // newMinRegistry builds a registry with provider, prompt, and budget factories
 // matching the IDs used in minSpec and buildMinimal tests.
 func newMinRegistry(t *testing.T) *registry.ComponentRegistry {
@@ -126,8 +128,8 @@ func TestBuild_CapabilitiesMinimalSpec(t *testing.T) {
 			t.Errorf("expected %q in Skipped", optional)
 			continue
 		}
-		if reason != "not_specified" {
-			t.Errorf("Skipped[%q].Reason = %q, want %q", optional, reason, "not_specified")
+		if reason != notSpecified {
+			t.Errorf("Skipped[%q].Reason = %q, want %q", optional, reason, notSpecified)
 		}
 	}
 }

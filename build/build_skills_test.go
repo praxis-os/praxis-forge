@@ -4,176 +4,17 @@ package build
 
 import (
 	"context"
-	"encoding/json"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/praxis-os/praxis-forge/factories/outputcontractjsonschema"
 	"github.com/praxis-os/praxis-forge/factories/policypackpiiredact"
 	"github.com/praxis-os/praxis-forge/factories/toolpackhttpget"
-	"github.com/praxis-os/praxis-forge/manifest"
 	"github.com/praxis-os/praxis-forge/registry"
 	"github.com/praxis-os/praxis-forge/spec"
 )
 
-// newSkillFixtureRegistry returns a registry populated with every factory
-// the skill fixtures reference. A fixture may use any subset.
-func newSkillFixtureRegistry(t *testing.T) *registry.ComponentRegistry {
-	t.Helper()
-	r := registry.NewComponentRegistry()
-	if err := r.RegisterProvider(minProvFac{id: "provider.min@1.0.0"}); err != nil {
-		t.Fatal(err)
-	}
-	if err := r.RegisterPromptAsset(minPromptFac{id: "prompt.sys@1.0.0"}); err != nil {
-		t.Fatal(err)
-	}
-	if err := r.RegisterToolPack(toolpackhttpget.NewFactory("toolpack.http-get@1.0.0")); err != nil {
-		t.Fatal(err)
-	}
-	if err := r.RegisterPolicyPack(policypackpiiredact.NewFactory("policypack.pii-redaction@1.0.0")); err != nil {
-		t.Fatal(err)
-	}
-	if err := r.RegisterOutputContract(outputcontractjsonschema.NewFactory("outputcontract.json-schema@1.0.0")); err != nil {
-		t.Fatal(err)
-	}
-	if err := r.RegisterOutputContract(outputcontractjsonschema.NewFactory("outputcontract.alt@1.0.0")); err != nil {
-		t.Fatal(err)
-	}
-	return r
-}
-
-// runSkillFixtureSuccess loads spec/testdata/skills/<scenario>/spec.yaml,
-// builds it, and compares the resulting Manifest.ExpandedHash against
-// want.expanded.hash plus (if present) the canonical expanded JSON
-// against want.expanded.json.
-func runSkillFixtureSuccess(t *testing.T, scenario string) {
-	t.Helper()
-	base := filepath.Join("..", "spec", "testdata", "skills", scenario)
-	specPath := filepath.Join(base, "spec.yaml")
-	s, err := spec.LoadSpec(specPath)
-	if err != nil {
-		t.Fatalf("LoadSpec %s: %v", specPath, err)
-	}
-	ns, err := spec.Normalize(context.Background(), s, nil, nil)
-	if err != nil {
-		t.Fatalf("Normalize: %v", err)
-	}
-	built, err := Build(context.Background(), ns, newSkillFixtureRegistry(t))
-	if err != nil {
-		t.Fatalf("Build: %v", err)
-	}
-
-	gotHash := built.Manifest.ExpandedHash
-	wantHashBytes, err := os.ReadFile(filepath.Join(base, "want.expanded.hash"))
-	if err != nil {
-		t.Fatalf("missing want.expanded.hash: %v", err)
-	}
-	wantHash := strings.TrimSpace(string(wantHashBytes))
-
-	if os.Getenv("WRITE_GOLDEN") == "1" {
-		_ = os.WriteFile(filepath.Join(base, "want.expanded.hash"), []byte(gotHash+"\n"), 0o644)
-		t.Logf("WRITE_GOLDEN: wrote hash %s", gotHash)
-	} else if gotHash != wantHash {
-		t.Errorf("ExpandedHash:\n  want: %s\n  got:  %s", wantHash, gotHash)
-	}
-
-	expJSONPath := filepath.Join(base, "want.expanded.json")
-	if wantJSON, err := os.ReadFile(expJSONPath); err == nil {
-		// Build effective spec JSON for comparison: use the expanded
-		// spec re-canonicalized via spec.NormalizedSpec.
-		tmpNS := &spec.NormalizedSpec{Spec: effectiveExpandedSpec(t, s, newSkillFixtureRegistry(t))}
-		gotJSON, err := tmpNS.CanonicalJSON()
-		if err != nil {
-			t.Fatalf("CanonicalJSON: %v", err)
-		}
-		if os.Getenv("WRITE_GOLDEN") == "1" {
-			_ = os.WriteFile(expJSONPath, append(gotJSON, '\n'), 0o644)
-			t.Logf("WRITE_GOLDEN: wrote %s", expJSONPath)
-		} else if !bytesEqualTrim(gotJSON, wantJSON) {
-			t.Errorf("canonical JSON differs:\n  want: %s\n  got:  %s", wantJSON, gotJSON)
-		}
-	}
-
-	// Basic manifest sanity: spec.skills[] non-empty implies ExpandedHash set.
-	if len(s.Skills) > 0 && built.Manifest.ExpandedHash == "" {
-		t.Error("expected ExpandedHash set when skills are declared")
-	}
-}
-
-// runSkillFixtureError loads the fixture and expects Build to fail with
-// a message containing the substring in want.err.txt.
-func runSkillFixtureError(t *testing.T, scenario string) {
-	t.Helper()
-	base := filepath.Join("..", "spec", "testdata", "skills", scenario)
-	specPath := filepath.Join(base, "spec.yaml")
-	s, err := spec.LoadSpec(specPath)
-	if err != nil {
-		// Some fixtures may fail at LoadSpec; treat that as acceptable if
-		// the error matches the expected substring.
-		wantBytes, readErr := os.ReadFile(filepath.Join(base, "want.err.txt"))
-		if readErr != nil {
-			t.Fatalf("LoadSpec %s: %v (and no want.err.txt to match): %v", specPath, err, readErr)
-		}
-		want := strings.TrimSpace(string(wantBytes))
-		if !strings.Contains(err.Error(), want) {
-			t.Fatalf("LoadSpec err %q missing substring %q", err.Error(), want)
-		}
-		return
-	}
-	ns, err := spec.Normalize(context.Background(), s, nil, nil)
-	if err != nil {
-		wantBytes, readErr := os.ReadFile(filepath.Join(base, "want.err.txt"))
-		if readErr == nil {
-			want := strings.TrimSpace(string(wantBytes))
-			if strings.Contains(err.Error(), want) {
-				return
-			}
-		}
-		t.Fatalf("Normalize: %v", err)
-	}
-	_, err = Build(context.Background(), ns, newSkillFixtureRegistry(t))
-	if err == nil {
-		t.Fatal("expected error, got nil")
-	}
-
-	wantBytes, err2 := os.ReadFile(filepath.Join(base, "want.err.txt"))
-	if err2 != nil {
-		t.Fatalf("missing want.err.txt: %v", err2)
-	}
-	want := strings.TrimSpace(string(wantBytes))
-	if !strings.Contains(err.Error(), want) {
-		t.Errorf("err %q does not contain %q", err.Error(), want)
-	}
-}
-
-// effectiveExpandedSpec re-runs the skill expansion and returns the
-// rewritten AgentSpec, used for fixture canonical-JSON comparison.
-func effectiveExpandedSpec(t *testing.T, s *spec.AgentSpec, r *registry.ComponentRegistry) spec.AgentSpec {
-	t.Helper()
-	es, err := expandSkills(context.Background(), s, r)
-	if err != nil {
-		t.Fatalf("expandSkills: %v", err)
-	}
-	return es.Spec
-}
-
-func bytesEqualTrim(a, b []byte) bool {
-	return strings.TrimSpace(string(a)) == strings.TrimSpace(string(b))
-}
-
-// manifestJSONContains is a helper for ad-hoc manifest assertions.
-func manifestJSONContains(t *testing.T, m manifest.Manifest, substr string) {
-	t.Helper()
-	b, err := json.Marshal(m)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(string(b), substr) {
-		t.Errorf("manifest JSON missing %q:\n%s", substr, b)
-	}
-}
 
 // --- Test fixtures: PASS scenarios ---
 
@@ -224,7 +65,7 @@ func TestSkillsFixture_BasicSkill(t *testing.T) {
 	wantHash := strings.TrimSpace(string(wantHashBytes))
 
 	if os.Getenv("WRITE_GOLDEN") == "1" {
-		_ = os.WriteFile("../spec/testdata/skills/basic-skill/want.expanded.hash", []byte(gotHash+"\n"), 0o644)
+		_ = os.WriteFile("../spec/testdata/skills/basic-skill/want.expanded.hash", []byte(gotHash+"\n"), 0o600)
 		t.Logf("WRITE_GOLDEN: wrote hash %s", gotHash)
 	} else if gotHash != wantHash {
 		t.Errorf("ExpandedHash:\n  want: %s\n  got:  %s", wantHash, gotHash)
@@ -269,7 +110,7 @@ func TestSkillsFixture_AutoInjectTool(t *testing.T) {
 	wantHash := strings.TrimSpace(string(wantHashBytes))
 
 	if os.Getenv("WRITE_GOLDEN") == "1" {
-		_ = os.WriteFile("../spec/testdata/skills/auto-inject-tool/want.expanded.hash", []byte(gotHash+"\n"), 0o644)
+		_ = os.WriteFile("../spec/testdata/skills/auto-inject-tool/want.expanded.hash", []byte(gotHash+"\n"), 0o600)
 		t.Logf("WRITE_GOLDEN: wrote hash %s", gotHash)
 	} else if gotHash != wantHash {
 		t.Errorf("ExpandedHash:\n  want: %s\n  got:  %s", wantHash, gotHash)
@@ -313,7 +154,7 @@ func TestSkillsFixture_IdempotentOverlap(t *testing.T) {
 	wantHash := strings.TrimSpace(string(wantHashBytes))
 
 	if os.Getenv("WRITE_GOLDEN") == "1" {
-		_ = os.WriteFile("../spec/testdata/skills/idempotent-overlap/want.expanded.hash", []byte(gotHash+"\n"), 0o644)
+		_ = os.WriteFile("../spec/testdata/skills/idempotent-overlap/want.expanded.hash", []byte(gotHash+"\n"), 0o600)
 		t.Logf("WRITE_GOLDEN: wrote hash %s", gotHash)
 	} else if gotHash != wantHash {
 		t.Errorf("ExpandedHash:\n  want: %s\n  got:  %s", wantHash, gotHash)
@@ -365,7 +206,7 @@ func TestSkillsFixture_OutputContractAutoInject(t *testing.T) {
 	wantHash := strings.TrimSpace(string(wantHashBytes))
 
 	if os.Getenv("WRITE_GOLDEN") == "1" {
-		_ = os.WriteFile("../spec/testdata/skills/output-contract-auto-inject/want.expanded.hash", []byte(gotHash+"\n"), 0o644)
+		_ = os.WriteFile("../spec/testdata/skills/output-contract-auto-inject/want.expanded.hash", []byte(gotHash+"\n"), 0o600)
 		t.Logf("WRITE_GOLDEN: wrote hash %s", gotHash)
 	} else if gotHash != wantHash {
 		t.Errorf("ExpandedHash:\n  want: %s\n  got:  %s", wantHash, gotHash)
