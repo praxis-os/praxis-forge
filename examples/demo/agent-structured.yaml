@@ -1,0 +1,37 @@
+apiVersion: forge.praxis-os.dev/v0
+kind: AgentSpec
+metadata:
+  id: demo.structured
+  version: 0.1.0
+  displayName: structured-output demo
+provider:
+  ref: provider.anthropic@1.0.0
+  config:
+    model: claude-sonnet-4-5
+    maxTokens: 1024
+prompt:
+  system:
+    ref: prompt.demo-structured-system@1.0.0
+policies:
+  - ref: policypack.pii-redaction@1.0.0
+    config:
+      strictness: medium
+budget:
+  ref: budgetprofile.default-tier1@1.0.0
+telemetry:
+  ref: telemetryprofile.slog@1.0.0
+outputContract:
+  ref: outputcontract.json-schema@1.0.0
+  config:
+    schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        summary:
+          type: string
+        url:
+          type: string
+      required:
+        - summary
+skills:
+  - ref: skill.structured-output@1.0.0
