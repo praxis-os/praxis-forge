@@ -101,3 +101,10 @@ type OutputContractFactory interface {
 	Description() string
 	Build(ctx context.Context, cfg map[string]any) (OutputContract, error)
 }
+
+// MCPBindingFactory builds an MCPBinding.
+type MCPBindingFactory interface {
+	ID() ID
+	Description() string
+	Build(ctx context.Context, cfg map[string]any) (MCPBinding, error)
+}

@@ -373,6 +373,21 @@ func TestRegister_OutputContract_FrozenRejects(t *testing.T) {
 	}
 }
 
+type fakeMCPBindingFactory struct{ id ID }
+
+func (f fakeMCPBindingFactory) ID() ID              { return f.id }
+func (f fakeMCPBindingFactory) Description() string { return fakeDesc }
+func (f fakeMCPBindingFactory) Build(context.Context, map[string]any) (MCPBinding, error) {
+	return MCPBinding{}, nil
+}
+
+func TestMCPBindingFactory_InterfaceSatisfied(t *testing.T) {
+	var f MCPBindingFactory = fakeMCPBindingFactory{id: "mcp.binding@1.0.0"}
+	if f.ID() != "mcp.binding@1.0.0" {
+		t.Fatalf("ID=%q", f.ID())
+	}
+}
+
 func TestMCPBindingType_ShapeSmoke(t *testing.T) {
 	b := MCPBinding{
 		ID: "fs",
