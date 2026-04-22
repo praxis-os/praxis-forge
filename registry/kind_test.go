@@ -31,3 +31,9 @@ func TestKind_Phase3ActiveKinds(t *testing.T) {
 		t.Fatalf("KindOutputContract=%q, expected \"output_contract\"", KindOutputContract)
 	}
 }
+
+func TestKind_Phase4ActiveKinds(t *testing.T) {
+	if string(KindMCPBinding) != "mcp_binding" {
+		t.Fatalf("KindMCPBinding=%q, expected \"mcp_binding\"", KindMCPBinding)
+	}
+}
