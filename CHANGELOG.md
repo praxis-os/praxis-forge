@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.7.0](https://github.com/praxis-os/praxis-forge/compare/v0.5.0...v0.7.0) (2026-04-23)
+
+
+### Added
+
+* **phase-4:** MCP consume as declarative runtime binding contract ([#17](https://github.com/praxis-os/praxis-forge/issues/17)) ([3b5ea55](https://github.com/praxis-os/praxis-forge/commit/3b5ea550729c7924d97359bf4fd436cf3efc5a40))
+
+
+### Documentation
+
+* Phase 4 design spec (MCP consume as runtime binding contract) ([75991d3](https://github.com/praxis-os/praxis-forge/commit/75991d34bc637d0dbd7e8ce2d96be54975cc8ac7))
+* Phase 4 implementation plan (15 TDD tasks, ~11 commits) ([1427a1c](https://github.com/praxis-os/praxis-forge/commit/1427a1cf790941a50d9251d5cd9a5b10df806f0a))
+* split Phase 4 plan into per-concern sub-files ([27679dc](https://github.com/praxis-os/praxis-forge/commit/27679dcc611547d06ee906cae998573428262b54))
+
 ## [0.5.0](https://github.com/praxis-os/praxis-forge/compare/v0.3.0...v0.5.0) (2026-04-20)
 
 
