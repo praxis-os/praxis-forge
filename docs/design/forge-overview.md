@@ -189,9 +189,12 @@ AgentSpec (yaml) ─▶ parse ─▶ validate ─▶ normalize ─▶ + overlays
   factories (`skill.structured-output@1.0.0`,
   `outputcontract.json-schema@1.0.0`). See
   [`docs/superpowers/specs/2026-04-21-praxis-forge-phase-3-design.md`](../superpowers/specs/2026-04-21-praxis-forge-phase-3-design.md).
-- **Phase 4 — MCP consume.** MCP imports, remote metadata normalization,
-  auth/trust metadata, allowlist/denylist, projection into forge tool
-  namespace.
+- **Phase 4 (shipped):** MCP imports activated as a declarative runtime
+  binding contract. Generic `mcp.binding@1` factory, stdio + streamable-HTTP
+  transports, allow/deny globs, policy chain, trust metadata, on-new-tool
+  policy. Build time produces a governable contract; runtime (praxis)
+  owns session establishment and drift handling. See
+  [`docs/superpowers/specs/2026-04-22-praxis-forge-phase-4-design.md`](../superpowers/specs/2026-04-22-praxis-forge-phase-4-design.md).
 - **Phase 5 — packaging.** Bundle format, lockfile, artifact metadata,
   reproducibility guarantees, integrity checks.
 - **Phase 6 — `praxis-os` handoff contract.** Freeze the invoke/capability/

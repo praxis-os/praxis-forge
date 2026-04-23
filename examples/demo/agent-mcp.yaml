@@ -1,0 +1,43 @@
+apiVersion: forge.praxis-os.dev/v0
+kind: AgentSpec
+metadata:
+  id: demo.mcp
+  version: 0.1.0
+  displayName: mcp-binding demo
+provider:
+  ref: provider.anthropic@1.0.0
+  config:
+    model: claude-sonnet-4-5
+    maxTokens: 1024
+prompt:
+  system:
+    ref: prompt.demo-system@1.0.0
+    config:
+      text: |
+        You are a helpful assistant with access to filesystem tools via MCP.
+policies:
+  - ref: policypack.pii-redaction@1.0.0
+    config:
+      strictness: medium
+mcpImports:
+  - ref: mcp.binding@1.0.0
+    config:
+      id: fs
+      connection:
+        transport: stdio
+        command:
+          - npx
+          - -y
+          - "@modelcontextprotocol/server-filesystem"
+          - /tmp/demo
+      allow:
+        - "read_*"
+        - "list_*"
+      deny:
+        - "write_*"
+      policies:
+        - policypack.pii-redaction@1.0.0
+      trust:
+        tier: medium
+        owner: demo
+      onNewTool: block

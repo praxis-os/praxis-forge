@@ -243,8 +243,7 @@ func mergeOne(merged *AgentSpec, child *AgentSpec, p Provenance, prov *provenanc
 		prov.Identity = p
 	}
 
-	// Phase 3: Skills and OutputContract are now preserved (previously
-	// phase-gated). MCPImports remains phase-gated for Phase 4.
+	// Phase 3: Skills and OutputContract; Phase 4: MCPImports. All propagate child-wins per replaceable-list semantics.
 	if child.Skills != nil {
 		merged.Skills = child.Skills
 		prov.Skills = p
@@ -252,6 +251,10 @@ func mergeOne(merged *AgentSpec, child *AgentSpec, p Provenance, prov *provenanc
 	if child.OutputContract != nil {
 		merged.OutputContract = child.OutputContract
 		prov.OutputContract = p
+	}
+	if child.MCPImports != nil {
+		merged.MCPImports = child.MCPImports
+		prov.MCPImports = p
 	}
 }
 

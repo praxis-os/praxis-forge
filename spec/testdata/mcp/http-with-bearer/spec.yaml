@@ -1,0 +1,30 @@
+apiVersion: forge.praxis-os.dev/v0
+kind: AgentSpec
+metadata:
+  id: mcp.fixture.http-bearer
+  version: 0.1.0
+provider:
+  ref: provider.min@1.0.0
+prompt:
+  system:
+    ref: prompt.sys@1.0.0
+mcpImports:
+  - ref: mcp.binding@1.0.0
+    config:
+      id: notion
+      connection:
+        transport: http
+        url: https://api.example.com/mcp
+      auth:
+        credentialRef: credresolver.env@1.0.0
+        scheme: bearer
+      trust:
+        tier: medium
+        owner: platform
+      policies:
+        - policypack.pii-redaction@1.0.0
+      allow:
+        - "search_*"
+      deny:
+        - "delete_*"
+      onNewTool: require-reapproval

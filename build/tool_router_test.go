@@ -68,3 +68,14 @@ func TestToolRouter_Unknown(t *testing.T) {
 		t.Fatalf("err=%v", err)
 	}
 }
+
+func TestToolRouter_RejectsReservedMCPPrefix(t *testing.T) {
+	pack := registry.ToolPack{
+		Invoker:     canned{},
+		Definitions: []llm.ToolDefinition{{Name: "mcp.fs.read_file"}},
+	}
+	_, _, err := newToolRouter([]registry.ToolPack{pack})
+	if err == nil || !errors.Is(err, ErrToolNameReservedPrefix) {
+		t.Fatalf("want ErrToolNameReservedPrefix, got %v", err)
+	}
+}

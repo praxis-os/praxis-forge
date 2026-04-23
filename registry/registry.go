@@ -27,6 +27,7 @@ type ComponentRegistry struct {
 	identitySigners   map[ID]IdentitySignerFactory
 	skills            map[ID]SkillFactory
 	outputContracts   map[ID]OutputContractFactory
+	mcpBindings       map[ID]MCPBindingFactory
 }
 
 func NewComponentRegistry() *ComponentRegistry {
@@ -44,6 +45,7 @@ func NewComponentRegistry() *ComponentRegistry {
 		identitySigners:   map[ID]IdentitySignerFactory{},
 		skills:            map[ID]SkillFactory{},
 		outputContracts:   map[ID]OutputContractFactory{},
+		mcpBindings:       map[ID]MCPBindingFactory{},
 	}
 }
 
@@ -375,6 +377,31 @@ func (r *ComponentRegistry) OutputContract(id ID) (OutputContractFactory, error)
 	f, ok := r.outputContracts[id]
 	if !ok {
 		return nil, fmt.Errorf("%w: kind=%s id=%s", ErrNotFound, KindOutputContract, id)
+	}
+	return f, nil
+}
+
+// --- MCPBinding ---
+
+func (r *ComponentRegistry) RegisterMCPBinding(f MCPBindingFactory) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.frozen {
+		return ErrRegistryFrozen
+	}
+	if _, exists := r.mcpBindings[f.ID()]; exists {
+		return fmt.Errorf("%w: kind=%s id=%s", ErrDuplicate, KindMCPBinding, f.ID())
+	}
+	r.mcpBindings[f.ID()] = f
+	return nil
+}
+
+func (r *ComponentRegistry) MCPBinding(id ID) (MCPBindingFactory, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	f, ok := r.mcpBindings[id]
+	if !ok {
+		return nil, fmt.Errorf("%w: kind=%s id=%s", ErrNotFound, KindMCPBinding, id)
 	}
 	return f, nil
 }

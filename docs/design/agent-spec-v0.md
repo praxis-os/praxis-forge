@@ -210,7 +210,7 @@ runs. No warnings — each failure aborts the build.
 
 ## Explicit deferrals
 
-- **MCP imports (Phase 4).** `mcpImports:` same rule.
+- `mcpImports`: active (Phase 4, landed 2026-04-22) — generic `mcp.binding@1` factory, runtime binding contract.
 - **Bundles / lockfiles (Phase 5).** No `bundle:` or `lockfile:` field
   in v0. These are repository-level artifacts, not spec fields.
 - **Expose-as-MCP.** Not a spec concern. It is a build-output concern

@@ -67,6 +67,10 @@ type resolved struct {
 	outputContractID  registry.ID
 	outputContractCfg map[string]any
 
+	mcpBindings    []registry.MCPBinding
+	mcpBindingIDs  []registry.ID
+	mcpBindingCfgs []map[string]any
+
 	specSnapshot *spec.AgentSpec
 }
 

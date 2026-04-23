@@ -1,0 +1,24 @@
+apiVersion: forge.praxis-os.dev/v0
+kind: AgentSpec
+metadata:
+  id: mcp.fixture.http-apikey
+  version: 0.1.0
+provider:
+  ref: provider.min@1.0.0
+prompt:
+  system:
+    ref: prompt.sys@1.0.0
+mcpImports:
+  - ref: mcp.binding@1.0.0
+    config:
+      id: svc
+      connection:
+        transport: http
+        url: https://api.example.com/mcp
+      auth:
+        credentialRef: credresolver.env@1.0.0
+        scheme: api-key
+        headerName: X-Api-Key
+      trust:
+        tier: medium
+        owner: platform

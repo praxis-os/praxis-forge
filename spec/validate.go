@@ -75,13 +75,16 @@ func (s *AgentSpec) Validate() error {
 		validateRef(&errs, "identity.ref", s.Identity.Ref)
 	}
 
-	// Phase-gated fields: extends and mcpImports remain gated; skills + outputContract now validated by prefix.
+	// Phase-gated fields: extends remains gated; skills, outputContract, and mcpImports now validated by prefix + structure.
 	if len(s.Extends) > 0 {
 		errs.Addf("extends: phase-gated (Phase 2); must be empty in v0")
 	}
-	if len(s.MCPImports) > 0 {
-		errs.Addf("mcpImports: phase-gated (Phase 4); must be empty in v0")
+
+	// MCP imports validation (Phase 4): each ref must be prefixed with "mcp.".
+	for i, mi := range s.MCPImports {
+		validateKindPrefixedRef(&errs, fmt.Sprintf("mcpImports[%d].ref", i), mi.Ref, "mcp.")
 	}
+	validateMCPImportsStructure(&errs, s.MCPImports)
 
 	// Skills validation: each ref must be prefixed with "skill.".
 	for i, skill := range s.Skills {

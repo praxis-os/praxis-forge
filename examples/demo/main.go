@@ -15,6 +15,7 @@ import (
 	"context"
 	"crypto/ed25519"
 	"crypto/rand"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -30,6 +31,7 @@ import (
 	"github.com/praxis-os/praxis-forge/factories/filterpathescape"
 	"github.com/praxis-os/praxis-forge/factories/filtersecretscrubber"
 	"github.com/praxis-os/praxis-forge/factories/identitysignered25519"
+	"github.com/praxis-os/praxis-forge/factories/mcpbinding"
 	"github.com/praxis-os/praxis-forge/factories/outputcontractjsonschema"
 	"github.com/praxis-os/praxis-forge/factories/policypackpiiredact"
 	"github.com/praxis-os/praxis-forge/factories/promptassetliteral"
@@ -49,6 +51,7 @@ func main() {
 	_, priv, _ := ed25519.GenerateKey(rand.Reader)
 
 	structured := flag.Bool("structured", false, "use the Phase-3 structured-output skill path")
+	mcpDemo := flag.Bool("mcp", false, "use the Phase-4 MCP binding demo spec (filesystem server)")
 	flag.Parse()
 
 	r := registry.NewComponentRegistry()
@@ -68,11 +71,17 @@ func main() {
 		must(r.RegisterSkill(skillstructuredoutput.NewFactory("skill.structured-output@1.0.0")))
 		must(r.RegisterOutputContract(outputcontractjsonschema.NewFactory("outputcontract.json-schema@1.0.0")))
 	}
+	if *mcpDemo {
+		must(r.RegisterMCPBinding(mcpbinding.NewFactory("mcp.binding@1.0.0")))
+	}
 
 	ctx := context.Background()
 	specPath := "examples/demo/agent.yaml"
-	if *structured {
+	switch {
+	case *structured:
 		specPath = "examples/demo/agent-structured.yaml"
+	case *mcpDemo:
+		specPath = "examples/demo/agent-mcp.yaml"
 	}
 	s, err := forge.LoadSpec(specPath)
 	if err != nil {
@@ -82,6 +91,18 @@ func main() {
 	b, err := forge.Build(ctx, s, r)
 	if err != nil {
 		log.Fatalf("build: %v", err)
+	}
+
+	if *mcpDemo {
+		fmt.Println("--- MCP binding contract ---")
+		for _, rc := range b.Manifest().Resolved {
+			if rc.Kind == "mcp_binding" {
+				raw, _ := json.MarshalIndent(rc, "", "  ")
+				fmt.Println(string(raw))
+			}
+		}
+		fmt.Println("NOTE: binding is a contract; actual MCP invocation is a runtime concern.")
+		return
 	}
 
 	var prompt string

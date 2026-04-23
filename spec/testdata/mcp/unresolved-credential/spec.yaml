@@ -1,0 +1,21 @@
+apiVersion: forge.praxis-os.dev/v0
+kind: AgentSpec
+metadata:
+  id: mcp.fixture.unresolved-cred
+  version: 0.1.0
+provider:
+  ref: provider.min@1.0.0
+prompt:
+  system:
+    ref: prompt.sys@1.0.0
+mcpImports:
+  - ref: mcp.binding@1.0.0
+    config:
+      id: svc
+      connection:
+        transport: http
+        url: https://e/mcp
+      trust: {tier: low, owner: demo}
+      auth:
+        credentialRef: credresolver.does-not-exist@1.0.0
+        scheme: bearer

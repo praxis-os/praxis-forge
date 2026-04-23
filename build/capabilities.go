@@ -79,6 +79,13 @@ func computeCapabilities(s *spec.AgentSpec, res *resolved, expanded *ExpandedSpe
 		skipped = append(skipped, manifest.CapabilitySkip{Kind: string(registry.KindOutputContract), Reason: "not_specified"})
 	}
 
+	// Phase 4: mcp_binding is present when spec.mcpImports[] is non-empty.
+	if len(s.MCPImports) > 0 {
+		present = append(present, string(registry.KindMCPBinding))
+	} else {
+		skipped = append(skipped, manifest.CapabilitySkip{Kind: string(registry.KindMCPBinding), Reason: "not_specified"})
+	}
+
 	sort.Strings(present)
 	return manifest.Capabilities{
 		Present: present,

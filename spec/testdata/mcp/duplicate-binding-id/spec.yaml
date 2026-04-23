@@ -1,0 +1,21 @@
+apiVersion: forge.praxis-os.dev/v0
+kind: AgentSpec
+metadata:
+  id: mcp.fixture.dup-id
+  version: 0.1.0
+provider:
+  ref: provider.min@1.0.0
+prompt:
+  system:
+    ref: prompt.sys@1.0.0
+mcpImports:
+  - ref: mcp.binding@1.0.0
+    config:
+      id: fs
+      connection: {transport: stdio, command: ["/bin/true"]}
+      trust: {tier: low, owner: demo}
+  - ref: mcp.binding@1.0.0
+    config:
+      id: fs
+      connection: {transport: stdio, command: ["/bin/true"]}
+      trust: {tier: low, owner: demo}

@@ -57,6 +57,15 @@ func Build(ctx context.Context, ns *spec.NormalizedSpec, r *registry.ComponentRe
 		res.outputContractID = expanded.ResolvedOutputContract.ID
 		res.outputContractCfg = expanded.ResolvedOutputContract.Config
 	}
+	mcpBinds, err := resolveMCPBindings(ctx, &expanded.Spec, r)
+	if err != nil {
+		return nil, err
+	}
+	for _, b := range mcpBinds {
+		res.mcpBindings = append(res.mcpBindings, b.Value)
+		res.mcpBindingIDs = append(res.mcpBindingIDs, b.ID)
+		res.mcpBindingCfgs = append(res.mcpBindingCfgs, b.Config)
+	}
 
 	// Append skill prompt fragments to the base system prompt (design
 	// §"Prompt fragment merge"): declaration order, "\n\n" separator,
@@ -266,6 +275,16 @@ func buildManifest(s *spec.AgentSpec, res *resolved, ns *spec.NormalizedSpec, ex
 			Config:          res.outputContractCfg,
 			Descriptors:     desc,
 			InjectedBySkill: lookupInjector(expanded, "output_contract", string(res.outputContractID)),
+		})
+	}
+	// MCP bindings (Phase 4).
+	for i, id := range res.mcpBindingIDs {
+		desc := res.mcpBindings[i].Descriptor
+		m.Resolved = append(m.Resolved, manifest.ResolvedComponent{
+			Kind:        string(registry.KindMCPBinding),
+			ID:          string(id),
+			Config:      res.mcpBindingCfgs[i],
+			Descriptors: desc,
 		})
 	}
 	return m

@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/praxis-os/praxis-forge/registry"
 	"github.com/praxis-os/praxis/llm"
@@ -13,8 +14,9 @@ import (
 )
 
 var (
-	ErrToolNameCollision = errors.New("tool name collision across tool packs")
-	ErrToolNotFound      = errors.New("tool not found in router")
+	ErrToolNameCollision      = errors.New("tool name collision across tool packs")
+	ErrToolNotFound           = errors.New("tool not found in router")
+	ErrToolNameReservedPrefix = errors.New("tool name uses reserved prefix mcp")
 )
 
 type toolRouter struct {
@@ -26,6 +28,9 @@ func newToolRouter(packs []registry.ToolPack) (*toolRouter, []llm.ToolDefinition
 	var defs []llm.ToolDefinition
 	for _, p := range packs {
 		for _, def := range p.Definitions {
+			if strings.HasPrefix(def.Name, "mcp.") {
+				return nil, nil, fmt.Errorf("%w: %s", ErrToolNameReservedPrefix, def.Name)
+			}
 			if _, exists := r.byName[def.Name]; exists {
 				return nil, nil, fmt.Errorf("%w: %s", ErrToolNameCollision, def.Name)
 			}

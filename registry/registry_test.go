@@ -372,3 +372,71 @@ func TestRegister_OutputContract_FrozenRejects(t *testing.T) {
 		t.Fatalf("err=%v", err)
 	}
 }
+
+type fakeMCPBindingFactory struct{ id ID }
+
+func (f fakeMCPBindingFactory) ID() ID              { return f.id }
+func (f fakeMCPBindingFactory) Description() string { return fakeDesc }
+func (f fakeMCPBindingFactory) Build(context.Context, map[string]any) (MCPBinding, error) {
+	return MCPBinding{}, nil
+}
+
+func TestMCPBindingFactory_InterfaceSatisfied(t *testing.T) {
+	var f MCPBindingFactory = fakeMCPBindingFactory{id: "mcp.binding@1.0.0"}
+	if f.ID() != "mcp.binding@1.0.0" {
+		t.Fatalf("ID=%q", f.ID())
+	}
+}
+
+func TestRegistry_MCPBinding_RegisterLookupDuplicateFrozen(t *testing.T) {
+	r := NewComponentRegistry()
+
+	if err := r.RegisterMCPBinding(fakeMCPBindingFactory{id: "mcp.binding@1.0.0"}); err != nil {
+		t.Fatalf("RegisterMCPBinding: %v", err)
+	}
+
+	got, err := r.MCPBinding("mcp.binding@1.0.0")
+	if err != nil {
+		t.Fatalf("MCPBinding: %v", err)
+	}
+	if got.ID() != "mcp.binding@1.0.0" {
+		t.Fatalf("got.ID=%q", got.ID())
+	}
+
+	err = r.RegisterMCPBinding(fakeMCPBindingFactory{id: "mcp.binding@1.0.0"})
+	if !errors.Is(err, ErrDuplicate) {
+		t.Fatalf("want ErrDuplicate, got %v", err)
+	}
+
+	_, err = r.MCPBinding("mcp.missing@1.0.0")
+	if !errors.Is(err, ErrNotFound) {
+		t.Fatalf("want ErrNotFound, got %v", err)
+	}
+
+	r.Freeze()
+	err = r.RegisterMCPBinding(fakeMCPBindingFactory{id: "mcp.other@1.0.0"})
+	if !errors.Is(err, ErrRegistryFrozen) {
+		t.Fatalf("want ErrRegistryFrozen, got %v", err)
+	}
+}
+
+func TestMCPBindingType_ShapeSmoke(t *testing.T) {
+	b := MCPBinding{
+		ID: "fs",
+		Connection: MCPConnection{
+			Transport: MCPTransportStdio,
+			Command:   []string{"/bin/true"},
+		},
+		Allow:     []string{"read_*"},
+		Deny:      []string{"write_*"},
+		Policies:  []ID{"policypack.pii-redaction@1.0.0"},
+		Trust:     MCPTrust{Tier: "medium", Owner: "demo"},
+		OnNewTool: OnNewToolBlock,
+	}
+	if b.Connection.Transport != "stdio" {
+		t.Fatalf("Transport=%q", b.Connection.Transport)
+	}
+	if b.OnNewTool != "block" {
+		t.Fatalf("OnNewTool=%q", b.OnNewTool)
+	}
+}
